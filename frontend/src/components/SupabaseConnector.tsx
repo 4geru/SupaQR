@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
-export default function QRConnector() {
+export default function SupabaseConnector() {
   const [supabaseUrl, setSupabaseUrl] = useState('')
   const [supabaseKey, setSupabaseKey] = useState('')
   const [isConnected, setIsConnected] = useState(false)
