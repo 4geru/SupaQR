@@ -53,6 +53,20 @@ export async function POST(req: NextRequest) {
       }
     }
     
+    // 既存のリストアイテムを削除
+    const { error: deleteError } = await supabase
+      .from('list_items')
+      .delete()
+      .eq('list_id', listId)
+    
+    if (deleteError) {
+      console.error('既存アイテム削除エラー:', deleteError)
+      return NextResponse.json(
+        { error: `既存アイテムの削除に失敗しました: ${deleteError.message}` },
+        { status: 500 }
+      )
+    }
+    
     // list_itemsテーブルにデータを挿入
     const { data, error } = await supabase
       .from('list_items')
