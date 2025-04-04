@@ -15,9 +15,10 @@ interface List {
 interface ListItem {
   id: number;
   list_id: number;
-  name: string;
   completed: boolean;
   created_at: string;
+  csv_column: Record<string, string>;
+  csv_column_number: number;
 }
 
 export default function ListDetailPage() {
@@ -30,6 +31,8 @@ export default function ListDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null);
   const [supabaseKey, setSupabaseKey] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null);
 
   useEffect(() => {
     // ローカルストレージから接続情報を取得
@@ -87,6 +90,56 @@ export default function ListDetailPage() {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !supabaseUrl || !supabaseKey) return;
+
+    setUploading(true);
+    setUploadResult(null);
+    
+    try {
+      // CSVファイルを読み込む
+      const fileContent = await file.text();
+      
+      // APIエンドポイントにデータを送信
+      const response = await fetch('/api/upload-list-items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supabaseUrl,
+          supabaseKey,
+          listId,
+          csvData: fileContent,
+          fileName: file.name,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'アップロード中にエラーが発生しました');
+      }
+      
+      setUploadResult({
+        message: `${result.insertedCount}件のアイテムを追加しました`,
+        success: true,
+      });
+      
+      // データを再読み込み
+      fetchListDetails(supabaseUrl, supabaseKey, listId);
+    } catch (err) {
+      console.error('CSVアップロードエラー:', err);
+      setUploadResult({
+        message: `アップロードに失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`,
+        success: false,
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen p-8">
       <header className="mb-8">
@@ -120,24 +173,67 @@ export default function ListDetailPage() {
         ) : (
           <>
             {list ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <div className="mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
+                {/* CSVアップロードフォーム */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <h2 className="text-xl font-semibold mb-3">CSVアップロード</h2>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-grow">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        CSVファイル
+                      </label>
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                  
+                  {uploading && (
+                    <div className="mt-3 flex items-center text-sm text-blue-600">
+                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                      アップロード中...
+                    </div>
+                  )}
+                  
+                  {uploadResult && (
+                    <div className={`mt-3 p-3 rounded-md text-sm ${uploadResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {uploadResult.message}
+                    </div>
+                  )}
+                </div>
+                
+                {/* アイテム一覧 */}
+                <div>
                   <h2 className="text-xl font-semibold mb-4">アイテム一覧</h2>
                   
                   {items.length > 0 ? (
                     <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                       {items.map((item) => (
                         <li key={item.id} className="py-3">
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={item.completed}
-                              readOnly
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                            />
-                            <span className={`ml-3 ${item.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'}`}>
-                              {item.id}
-                            </span>
+                          <div className="flex flex-col">
+                            <div className="flex items-center mb-2">
+                              <span className="text-gray-900 dark:text-white font-medium">
+                                行番号: {item.csv_column_number}
+                              </span>
+                            </div>
+                            {item.csv_column && (
+                              <div className="ml-6 bg-gray-50 dark:bg-gray-900 rounded p-3 text-sm">
+                                <h4 className="text-gray-700 dark:text-gray-300 mb-1 font-medium">CSV データ:</h4>
+                                <div className="flex flex-col space-y-1">
+                                  {Object.entries(item.csv_column).map(([key, value]) => (
+                                    <div key={key} className="flex">
+                                      <span className="font-medium text-gray-600 dark:text-gray-400 mr-2 w-24">{key}:</span>
+                                      <span className="text-gray-800 dark:text-gray-200">{value}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </li>
                       ))}
