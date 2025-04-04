@@ -17,8 +17,6 @@ export default function ListsPage() {
   const [error, setError] = useState<string | null>(null);
   const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null);
   const [supabaseKey, setSupabaseKey] = useState<string | null>(null);
-  const [creatingTestData, setCreatingTestData] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // ローカルストレージから接続情報を取得
