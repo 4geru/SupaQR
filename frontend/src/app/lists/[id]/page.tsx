@@ -19,6 +19,8 @@ interface ListItem {
   created_at: string;
   csv_column: Record<string, string>;
   csv_column_number: number;
+  qr_code_uuid: string | null;
+  confimed_qr_code: boolean;
 }
 
 export default function ListDetailPage() {
@@ -232,6 +234,17 @@ export default function ListDetailPage() {
                                     </div>
                                   ))}
                                 </div>
+                              </div>
+                            )}
+                            {item.qr_code_uuid && (
+                              <div className="mt-3 ml-6">
+                                <Link 
+                                  href={`/qr/${item.qr_code_uuid}`}
+                                  className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                                >
+                                  <span className="mr-1">QRコードを表示</span>
+                                  <span className={`w-2 h-2 rounded-full ${item.confimed_qr_code ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                </Link>
                               </div>
                             )}
                           </div>
