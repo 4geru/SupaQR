@@ -14,6 +14,7 @@ yarn-error.log*
 .vscode/
 *.swp
 *.swo
+supabase-qr-connector.code-workspace
 
 # OS生成ファイル
 .DS_Store
@@ -25,4 +26,4 @@ logs/
 
 # ビルド出力
 dist/
-build/ 
+build/
