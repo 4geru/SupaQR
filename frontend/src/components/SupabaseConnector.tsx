@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import Link from 'next/link';
 
 export default function SupabaseConnector() {
   const [supabaseUrl, setSupabaseUrl] = useState('')
@@ -10,6 +11,15 @@ export default function SupabaseConnector() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showExamples, setShowExamples] = useState(false)
+  
+  // 初期化時にローカルストレージから設定を読み込み
+  useEffect(() => {
+    const storedUrl = localStorage.getItem('supabaseUrl');
+    const storedKey = localStorage.getItem('supabaseKey');
+    
+    if (storedUrl) setSupabaseUrl(storedUrl);
+    if (storedKey) setSupabaseKey(storedKey);
+  }, []);
   
   // Supabaseに接続
   const handleConnect = async (e: React.FormEvent) => {
@@ -39,6 +49,10 @@ export default function SupabaseConnector() {
       if (!response.ok) {
         throw new Error(`接続に失敗しました: ${response.status} ${response.statusText}`)
       }
+      
+      // 接続情報をローカルストレージに保存
+      localStorage.setItem('supabaseUrl', supabaseUrl);
+      localStorage.setItem('supabaseKey', supabaseKey);
       
       setIsConnected(true)
     } catch (err) {
@@ -143,6 +157,12 @@ export default function SupabaseConnector() {
           <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
             <p className="font-medium">接続成功！</p>
             <p className="text-sm mt-1">Supabaseへの接続が正常に確立されました。</p>
+          </div>
+          
+          <div className="mt-4">
+            <Link href="/lists" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md inline-block">
+              リスト一覧を表示
+            </Link>
           </div>
           
           <div className="pt-4">

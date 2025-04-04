@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 // クライアントサイドのみで実行するようにダイナミックインポート
 const SupabaseConnector = dynamic(() => import('@/components/SupabaseConnector'), {
@@ -15,6 +16,20 @@ export default function Home() {
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           Supabase接続確認ツール
         </p>
+        <nav className="mt-4">
+          <ul className="flex space-x-4">
+            <li>
+              <Link href="/" className="text-blue-600 hover:underline font-medium">
+                ホーム
+              </Link>
+            </li>
+            <li>
+              <Link href="/lists" className="text-blue-600 hover:underline">
+                リスト一覧
+              </Link>
+            </li>
+          </ul>
+        </nav>
       </header>
 
       <main className="flex-grow">
@@ -28,6 +43,7 @@ export default function Home() {
           <ol className="list-decimal list-inside space-y-2">
             <li>Supabase URLとAPI Keyを入力して接続します</li>
             <li>接続が成功すると確認メッセージが表示されます</li>
+            <li>「リスト一覧を表示」ボタンをクリックすると、リスト一覧ページに移動します</li>
           </ol>
         </div>
       </main>
