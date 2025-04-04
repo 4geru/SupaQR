@@ -135,10 +135,14 @@ export default function ListsPage() {
                       {lists.map((list) => (
                         <tr key={list.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {list.id}
+                            <Link href={`/lists/${list.id}`} className="text-blue-600 hover:underline">
+                              {list.id}
+                            </Link>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            {list.title}
+                            <Link href={`/lists/${list.id}`} className="text-blue-600 hover:underline">
+                              {list.title}
+                            </Link>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {list.description || '-'}
