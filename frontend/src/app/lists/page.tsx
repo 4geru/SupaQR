@@ -21,18 +21,43 @@ export default function ListsPage() {
   const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null);
 
   useEffect(() => {
-    // ローカルストレージから接続情報を取得
-    const storedUrl = localStorage.getItem('supabaseUrl');
-    const storedKey = localStorage.getItem('supabaseKey');
-    
-    if (storedUrl && storedKey) {
+    const checkAuth = async () => {
+      // ローカルストレージから接続情報を取得
+      const storedUrl = localStorage.getItem('supabaseUrl');
+      const storedKey = localStorage.getItem('supabaseKey');
+      
+      if (!storedUrl || !storedKey) {
+        setError('Supabase接続情報が設定されていません。接続設定ページで接続してください。');
+        setLoading(false);
+        return;
+      }
+
       setSupabaseUrl(storedUrl);
       setSupabaseKey(storedKey);
+
+      // Supabaseクライアントを作成
+      const supabase = createClient(storedUrl, storedKey);
+
+      // セッションを確認
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        setError(`認証エラー: ${sessionError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      if (!session) {
+        // 未認証の場合はログインページにリダイレクト
+        window.location.href = '/auth/signin';
+        return;
+      }
+
+      // 認証済みの場合はリストを取得
       fetchLists(storedUrl, storedKey);
-    } else {
-      setLoading(false);
-      setError('Supabase接続情報が設定されていません。接続設定ページで接続してください。');
-    }
+    };
+    
+    checkAuth();
   }, []);
 
   const fetchLists = async (url: string, key: string) => {
@@ -40,38 +65,54 @@ export default function ListsPage() {
     setError(null);
     
     try {
+      console.log('Supabaseクライアントを作成中...', { url });
       const supabase = createClient(url, key);
       
-      // テーブル一覧を取得して、listsテーブルが存在するか確認
-      const { data: tables, error: tablesError } = await supabase
-        .from('_tables')
-        .select('name');
+      // セッションを取得
+      console.log('セッション情報を取得中...');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (tablesError) {
-        console.log('テーブル一覧取得エラー:', tablesError);
-      } else {
-        console.log('利用可能なテーブル:', tables);
+      if (sessionError) {
+        console.error('セッション取得エラー:', sessionError);
+        throw sessionError;
       }
-      
-      // listsテーブルからデータ取得
+
+      if (!session) {
+        console.error('セッションが存在しません');
+        throw new Error('認証セッションが存在しません');
+      }
+
+      console.log('セッション情報:', { userId: session.user.id });
+
+      // RSLに対応したクエリを実行
+      console.log('listsテーブルからデータを取得中...');
       const { data, error } = await supabase
         .from('lists')
         .select('*')
+        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('詳細エラー情報:', error);
+        console.error('データ取得エラー:', error);
         throw error;
       }
       
+      console.log('取得したデータ:', data);
+      
       if (data && data.length === 0) {
-        setError('リストが見つかりません。テーブルは存在しますが、データがありません。Supabaseダッシュボードでデータを追加してください。');
+        console.log('データが0件です');
+        setError('リストが見つかりません。データが存在しないか、アクセス権限がない可能性があります。');
       }
       
       setLists(data || []);
     } catch (err) {
       console.error('リスト取得エラー:', err);
-      setError(`リストの取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}\n\nSupabaseダッシュボードで以下を確認してください：\n1. listsテーブルが存在すること\n2. 適切な権限が設定されていること\n3. APIキーに適切な権限があること`);
+      const errorMessage = err instanceof Error ? err.message : '不明なエラー';
+      console.error('エラーの詳細:', {
+        message: errorMessage,
+        stack: err instanceof Error ? err.stack : undefined
+      });
+      setError(`リストの取得に失敗しました: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -85,21 +126,39 @@ export default function ListsPage() {
     setUploadResult(null);
     
     try {
+      // Supabaseクライアントを作成
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // セッションを取得
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      console.log('セッション情報:', session);
+      console.log('セッションエラー:', sessionError);
+      
+      if (sessionError || !session) {
+        throw new Error('セッションが存在しません。ログインが必要です。');
+      }
+
       // CSVファイルを読み込む
       const fileContent = await file.text();
       
       // APIエンドポイントにデータを送信
+      const requestBody = {
+        supabaseUrl,
+        supabaseKey,
+        csvData: fileContent,
+        fileName: file.name,
+        session: session,
+      };
+      
+      console.log('APIリクエストボディ:', requestBody);
+      
       const response = await fetch('/api/upload-list', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          supabaseUrl,
-          supabaseKey,
-          csvData: fileContent,
-          fileName: file.name,
-        }),
+        body: JSON.stringify(requestBody),
       });
       
       const result = await response.json();
@@ -180,16 +239,6 @@ export default function ListsPage() {
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <h3 className="font-bold mb-2">エラーが発生しました</h3>
               <p className="whitespace-pre-line">{error}</p>
-              <div className="mt-4 bg-white p-3 rounded border border-red-200">
-                <h4 className="font-medium mb-2">対処方法:</h4>
-                <ol className="list-decimal list-inside space-y-1 text-sm">
-                  <li>Supabaseダッシュボードで<strong>listsテーブル</strong>が存在することを確認</li>
-                  <li>テーブルが存在しない場合は作成してください（id, title, description, created_atカラムが必要）</li>
-                  <li>テストデータを追加</li>
-                  <li>Table Editor → listsテーブル → Policies で適切な権限が設定されていることを確認</li>
-                  <li><code>anon</code>キーに読み取り権限を付与（最低限select権限が必要）</li>
-                </ol>
-              </div>
             </div>
           )}
           
