@@ -7,27 +7,50 @@ export async function POST(req: NextRequest) {
     
     // パラメータのバリデーション
     if (!supabaseUrl || !supabaseKey || !itemId || !qrCodeUuid) {
+      console.error('不足しているパラメータ:', {
+        supabaseUrl: !!supabaseUrl,
+        supabaseKey: !!supabaseKey,
+        itemId: !!itemId,
+        qrCodeUuid: !!qrCodeUuid,
+      });
       return NextResponse.json(
         { error: '必須パラメータが不足しています' },
         { status: 400 }
       )
     }
     
-    // Supabaseクライアントを作成
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    // Supabaseクライアントを作成（サービスロールキーを使用）
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
     
-    // リストアイテムが存在するかチェック
+    // リストアイテムが存在するかチェック（RLSを考慮）
     const { data: itemData, error: itemError } = await supabase
       .from('list_items')
-      .select('id, qr_code_uuid, confimed_qr_code')
+      .select(`
+        id,
+        qr_code_uuid,
+        confimed_qr_code,
+        list_id
+      `)
       .eq('id', itemId)
-      .eq('qr_code_uuid', qrCodeUuid)
       .single()
     
     if (itemError) {
       return NextResponse.json(
         { error: `指定されたアイテムが見つかりません: ${itemError.message}` },
         { status: 404 }
+      )
+    }
+    
+    // QRコードUUIDが一致するか確認
+    if (itemData.qr_code_uuid !== qrCodeUuid) {
+      return NextResponse.json(
+        { error: 'QRコードUUIDが一致しません' },
+        { status: 400 }
       )
     }
     
@@ -44,8 +67,13 @@ export async function POST(req: NextRequest) {
       .from('list_items')
       .update({ confimed_qr_code: true })
       .eq('id', itemId)
-      .eq('qr_code_uuid', qrCodeUuid)
-      .select()
+      .select(`
+        id,
+        qr_code_uuid,
+        confimed_qr_code,
+        list_id
+      `)
+      .single()
     
     if (error) {
       return NextResponse.json(
@@ -57,7 +85,7 @@ export async function POST(req: NextRequest) {
     // 成功レスポンス
     return NextResponse.json({
       message: 'QRコードを確認しました',
-      item: data[0]
+      item: data
     })
     
   } catch (error) {

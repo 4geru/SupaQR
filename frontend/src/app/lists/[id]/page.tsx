@@ -76,7 +76,7 @@ export default function ListDetailPage() {
         .from('list_items')
         .select('*')
         .eq('list_id', id)
-        .order('created_at', { ascending: true });
+        .order('csv_column_number', { ascending: true });
       
       if (itemsError) {
         console.error('アイテム取得エラー:', itemsError);
@@ -93,14 +93,25 @@ export default function ListDetailPage() {
   };
 
   const handleConfirmQrCode = async () => {
-    if (!supabaseUrl || !supabaseKey || !selectedItem) return;
+    if (!supabaseUrl || !supabaseKey || !selectedItem) {
+      setError('必要な情報が不足しています');
+      return;
+    }
     
-    setSelectedItem({
-      ...selectedItem,
-      confimed_qr_code: true
-    });
+    if (!selectedItem.qr_code_uuid) {
+      setError('QRコードUUIDが設定されていません');
+      return;
+    }
     
-    try {
+    // ローカルで即座に状態を更新
+    const updatedItems = items.map(item => 
+      item.id === selectedItem.id 
+        ? { ...item, confimed_qr_code: true }
+        : item
+    );
+    setItems(updatedItems);
+    
+    try {      
       const response = await fetch('/api/confirm-qr-code', {
         method: 'POST',
         headers: {
@@ -120,13 +131,24 @@ export default function ListDetailPage() {
         throw new Error(result.error || 'QRコード確認中にエラーが発生しました');
       }
       
+      // 成功時の処理
+      // 選択されたアイテムの状態も更新
+      setSelectedItem({
+        ...selectedItem,
+        confimed_qr_code: true
+      });
+      
     } catch (err) {
       console.error('QRコード確認エラー:', err);
       setError(`QRコードの確認に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
-      setSelectedItem({
-        ...selectedItem,
-        confimed_qr_code: false
-      });
+      
+      // エラー時は元の状態に戻す
+      const revertedItems = items.map(item => 
+        item.id === selectedItem.id 
+          ? { ...item, confimed_qr_code: false }
+          : item
+      );
+      setItems(revertedItems);
     }
   };
 
@@ -146,6 +168,28 @@ export default function ListDetailPage() {
             {list.description}
           </p>
         )}
+        <div className="mt-4">
+          <div className="flex items-center">
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+              <div 
+                className={`h-2.5 rounded-full ${
+                  items.length > 0 && items.filter(item => item.confimed_qr_code).length === items.length
+                    ? 'bg-green-600'
+                    : 'bg-blue-600'
+                }`}
+                style={{ 
+                  width: `${items.length > 0 ? (items.filter(item => item.confimed_qr_code).length / items.length * 100) : 0}%` 
+                }}
+              ></div>
+            </div>
+            <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+              {items.length > 0 ? Math.round(items.filter(item => item.confimed_qr_code).length / items.length * 100) : 0}%
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {items.filter(item => item.confimed_qr_code).length} / {items.length} アイテム確認済み
+          </p>
+        </div>
       </header>
 
       <main className="flex-grow flex">
@@ -176,6 +220,21 @@ export default function ListDetailPage() {
                               <span className="text-gray-900 dark:text-white font-medium">
                                 行番号: {item.csv_column_number}
                               </span>
+                              {item.confimed_qr_code ? (
+                                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                  </svg>
+                                  確認済み
+                                </span>
+                              ) : (
+                                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                  </svg>
+                                  未確認
+                                </span>
+                              )}
                             </div>
                             {item.csv_column && (
                               <div className="ml-6 bg-gray-50 dark:bg-gray-900 rounded p-3 text-sm">
