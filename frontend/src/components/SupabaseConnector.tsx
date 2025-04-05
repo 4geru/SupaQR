@@ -67,7 +67,7 @@ export default function SupabaseConnector() {
           </div>
           
           <div className="mt-4">
-            <Link href="/lists" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md inline-block">
+            <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md inline-block">
               リスト一覧を表示
             </Link>
           </div>

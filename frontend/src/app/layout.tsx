@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   // ルートパスへのアクセスを/にリダイレクト
-  if (typeof window !== 'undefined' && window.location.pathname === '/lists') {
+  if (typeof window !== 'undefined' && window.location.pathname === '/') {
     redirect('/');
   }
 

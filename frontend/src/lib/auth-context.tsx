@@ -73,7 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // セッションが切れた場合はローカルストレージをクリア
           localStorage.removeItem('supabaseUrl');
           localStorage.removeItem('supabaseKey');
-          window.location.href = '/auth/signin';
           return;
         }
 
@@ -99,11 +98,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           loading: false,
           error: null
         });
-
-        // ログイン成功時に/にリダイレクト
-        if (window.location.pathname === '/auth/signin' || window.location.pathname === '/lists') {
-          router.push('/');
-        }
       } catch (err) {
         console.error('認証チェックエラー:', err);
         updateListState({
@@ -118,6 +112,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      const currentPath = window.location.pathname;
+      
+      if (!user) {
+        // 未認証ユーザーはログインページ以外にアクセスできない
+        if (currentPath !== '/login') {
+          router.push('/login');
+        }
+      } else {
+        // 認証済みユーザーはログインページにアクセスできない
+        if (currentPath === '/login') {
+          router.push('/');
+        }
+      }
+    }
+  }, [user, loading, router]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
