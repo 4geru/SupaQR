@@ -1,50 +1,283 @@
 "use client";
 
-import dynamic from 'next/dynamic';
+import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 
-// クライアントサイドのみで実行するようにダイナミックインポート
-const SupabaseConnector = dynamic(() => import('@/components/SupabaseConnector'), {
-  ssr: false,
-});
+interface List {
+  id: number;
+  title: string;
+  description: string | null;
+  created_at: string;
+}
 
-export default function Home() {
+export default function ListsPage() {
+  const [lists, setLists] = useState<List[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null);
+  const router = useRouter();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // セッションを確認
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('セッション取得エラー:', sessionError);
+          throw new Error(`認証エラー: ${sessionError.message}`);
+        }
+
+        if (!session) {
+          console.log('セッションが存在しません。ログインページにリダイレクトします。');
+          router.push('/login');
+          return;
+        }
+
+        console.log('認証成功:', session.user.id);
+        
+        // 認証済みの場合はリストを取得
+        const { data, error: fetchError } = await supabase
+          .from('lists')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
+        
+        if (fetchError) {
+          console.error('リスト取得エラー:', fetchError);
+          throw new Error(`リストの取得に失敗しました: ${fetchError.message}`);
+        }
+
+        if (!data || data.length === 0) {
+          console.log('リストが見つかりません');
+          setLists([]);
+          return;
+        }
+
+        console.log('リスト取得成功:', data.length, '件');
+        setLists(data);
+      } catch (err) {
+        console.error('認証チェックエラー:', err);
+        setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
+        setLists([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else if (window.location.pathname === '/login') {
+        router.push('/');
+      }
+    }
+  }, [user, loading, router]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadResult(null);
+    
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // セッションを取得
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('セッションが存在しません。ログインが必要です。');
+      }
+
+      // CSVファイルを読み込む
+      const fileContent = await file.text();
+      
+      // APIエンドポイントにデータを送信
+      const requestBody = {
+        csvData: fileContent,
+        fileName: file.name,
+        session: session,
+      };
+      
+      const response = await fetch('/api/upload-list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'アップロード中にエラーが発生しました');
+      }
+      
+      setUploadResult({
+        message: `リスト「${result.title}」を作成しました`,
+        success: true,
+      });
+      
+      // リストを再読み込み
+      const { data, error: fetchError } = await supabase
+        .from('lists')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) {
+        throw new Error(`リストの取得に失敗しました: ${fetchError.message}`);
+      }
+      
+      setLists(data || []);
+    } catch (err) {
+      console.error('CSVアップロードエラー:', err);
+      setUploadResult({
+        message: `アップロードに失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`,
+        success: false,
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen p-8">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold">Supabase Connector</h1>
+        <h1 className="text-3xl font-bold">リスト一覧</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Supabase接続確認ツール
+          Supabaseのlistsテーブルから取得したリスト
         </p>
-        <nav className="mt-4">
-          <ul className="flex space-x-4">
-            <li>
-              <Link href="/" className="text-blue-600 hover:underline font-medium">
-                ホーム
-              </Link>
-            </li>
-            <li>
-              <Link href="/lists" className="text-blue-600 hover:underline">
-                リスト一覧
-              </Link>
-            </li>
-          </ul>
-        </nav>
       </header>
 
       <main className="flex-grow">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 max-w-2xl">
-          <h2 className="text-xl font-semibold mb-4">接続設定</h2>
-          <SupabaseConnector />
-        </div>
-        
-        <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6 max-w-2xl">
-          <h2 className="text-xl font-semibold mb-4">使い方</h2>
-          <ol className="list-decimal list-inside space-y-2">
-            <li>Supabase URLとAPI Keyを入力して接続します</li>
-            <li>接続が成功すると確認メッセージが表示されます</li>
-            <li>「リスト一覧を表示」ボタンをクリックすると、リスト一覧ページに移動します</li>
-          </ol>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          {/* CSVアップロードフォーム */}
+          <div className="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h2 className="text-xl font-semibold mb-3">CSVアップロード</h2>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-grow">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  CSVファイル
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                />
+              </div>
+            </div>
+            
+            {uploading && (
+              <div className="mt-3 flex items-center text-sm text-blue-600">
+                <div className="animate-spin mr-2 h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                アップロード中...
+              </div>
+            )}
+            
+            {uploadResult && (
+              <div className={`mt-3 p-3 rounded-md text-sm ${uploadResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {uploadResult.message}
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              <h3 className="font-bold mb-2">エラーが発生しました</h3>
+              <p className="whitespace-pre-line">{error}</p>
+            </div>
+          )}
+          
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <>
+              {lists.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-900">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          ID
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          タイトル
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          説明
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          作成日
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {lists.map((list) => (
+                        <tr key={list.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            <Link href={`/lists/${list.id}`} className="text-blue-600 hover:underline">
+                              {list.id}
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                            <Link href={`/lists/${list.id}`} className="text-blue-600 hover:underline">
+                              {list.title}
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {list.description || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(list.created_at).toLocaleString('ja-JP')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+                  リストが見つかりません。データが存在しないか、アクセス権限がない可能性があります。
+                </div>
+              )}
+            </>
+          )}
         </div>
       </main>
       
@@ -53,6 +286,5 @@ export default function Home() {
       </footer>
     </div>
   );
-}
-
+} 
 

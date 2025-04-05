@@ -4,34 +4,22 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function AuthCallbackPage() {
+export default function AuthCallback() {
   const router = useRouter()
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession()
-
-      if (error) {
-        console.error('認証エラー:', error)
-        router.push('/login')
-        return
-      }
-
-      if (session) {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
         router.push('/')
-      } else {
-        router.push('/login')
       }
-    }
-
-    handleAuthCallback()
+    })
   }, [router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">認証中...</h1>
-        <p>しばらくお待ちください</p>
+        <h1 className="text-2xl font-bold">認証中...</h1>
+        <p className="mt-2">しばらくお待ちください</p>
       </div>
     </div>
   )

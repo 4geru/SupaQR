@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '@/lib/auth-context'
 import Header from '@/components/Header'
+import { redirect } from 'next/navigation';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Supabase QR Connector",
+  title: "SupaQR",
   description: "QR code column management for Supabase",
 };
 
@@ -24,6 +25,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // ルートパスへのアクセスを/にリダイレクト
+  if (typeof window !== 'undefined' && window.location.pathname === '/lists') {
+    redirect('/');
+  }
+
   return (
     <html lang="ja">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>

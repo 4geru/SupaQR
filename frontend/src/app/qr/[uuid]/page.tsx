@@ -23,58 +23,60 @@ export default function QrCodePage() {
   const [listItem, setListItem] = useState<ListItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null);
-  const [supabaseKey, setSupabaseKey] = useState<string | null>(null);
   const [confirmStatus, setConfirmStatus] = useState<'未確認' | '確認中' | '確認済み'>('未確認');
 
   useEffect(() => {
-    // ローカルストレージから接続情報を取得
-    const storedUrl = localStorage.getItem('supabaseUrl');
-    const storedKey = localStorage.getItem('supabaseKey');
+    const fetchQrCodeData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // QRコードUUIDからリストアイテムを取得
+        const { data, error: fetchError } = await supabase
+          .from('list_items')
+          .select('*')
+          .eq('qr_code_uuid', uuid)
+          .single();
+        
+        if (fetchError) {
+          throw fetchError;
+        }
+        
+        setListItem(data);
+        
+        // 確認ステータスを設定
+        setConfirmStatus(data.confimed_qr_code ? '確認済み' : '未確認');
+        
+      } catch (err) {
+        console.error('QRコードデータ取得エラー:', err);
+        setError(`QRコードデータの取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    if (storedUrl && storedKey) {
-      setSupabaseUrl(storedUrl);
-      setSupabaseKey(storedKey);
-      fetchQrCodeData(storedUrl, storedKey, uuid);
-    } else {
-      setLoading(false);
-      setError('Supabase接続情報が設定されていません。接続設定ページで接続してください。');
-    }
+    fetchQrCodeData();
   }, [uuid]);
 
-  const fetchQrCodeData = async (url: string, key: string, qrUuid: string) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const supabase = createClient(url, key);
-      
-      // QRコードUUIDからリストアイテムを取得
-      const { data, error: fetchError } = await supabase
-        .from('list_items')
-        .select('*')
-        .eq('qr_code_uuid', qrUuid)
-        .single();
-      
-      if (fetchError) {
-        throw fetchError;
-      }
-      
-      setListItem(data);
-      
-      // 確認ステータスを設定
-      setConfirmStatus(data.confimed_qr_code ? '確認済み' : '未確認');
-      
-    } catch (err) {
-      console.error('QRコードデータ取得エラー:', err);
-      setError(`QRコードデータの取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleConfirmQrCode = async () => {
-    if (!supabaseUrl || !supabaseKey || !listItem) return;
+    if (!listItem) return;
+    
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      setError('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+      return;
+    }
     
     setConfirmStatus('確認中');
     

@@ -1,17 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useAuth } from '@/lib/auth-context'
-import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const { user, signOut } = useAuth()
-  const router = useRouter()
 
   const handleSignOut = async () => {
     try {
       await signOut()
-      router.push('/login')
     } catch (error) {
       console.error('ログアウトエラー:', error)
     }
@@ -23,8 +21,14 @@ export default function Header() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">
-                Supabase QR Connector
+              <Link href="/" className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Image
+                  src="/images/SupaQR-icon.png"
+                  alt="SupaQR Icon"
+                  width={32}
+                  height={32}
+                />
+                <span>SupaQR</span>
               </Link>
             </div>
           </div>
