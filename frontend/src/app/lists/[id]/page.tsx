@@ -98,8 +98,6 @@ export default function ListDetailPage() {
       return;
     }
     
-    console.log('選択されたアイテム:', selectedItem);
-    
     if (!selectedItem.qr_code_uuid) {
       setError('QRコードUUIDが設定されていません');
       return;
@@ -113,13 +111,7 @@ export default function ListDetailPage() {
     );
     setItems(updatedItems);
     
-    try {
-      console.log('QRコード確認リクエスト:', {
-        itemId: selectedItem.id,
-        qrCodeUuid: selectedItem.qr_code_uuid,
-        listId: selectedItem.list_id
-      });
-      
+    try {      
       const response = await fetch('/api/confirm-qr-code', {
         method: 'POST',
         headers: {
@@ -140,8 +132,6 @@ export default function ListDetailPage() {
       }
       
       // 成功時の処理
-      console.log('QRコード確認成功:', result);
-      
       // 選択されたアイテムの状態も更新
       setSelectedItem({
         ...selectedItem,

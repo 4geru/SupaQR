@@ -29,26 +29,16 @@ function parseCSV(csvData: string): Record<string, string>[] {
 
 export async function POST(request: Request) {
   try {
-    const requestBody = await request.json();
-    console.log('APIリクエストボディ:', requestBody);
-    
+    const requestBody = await request.json(); 
+
     const { supabaseUrl, supabaseKey, csvData, fileName, session } = requestBody;
 
     if (!supabaseUrl || !supabaseKey || !csvData || !session) {
-      console.log('不足しているパラメータ:', {
-        supabaseUrl: !!supabaseUrl,
-        supabaseKey: !!supabaseKey,
-        csvData: !!csvData,
-        session: !!session,
-      });
       return NextResponse.json(
         { error: '必要なパラメータが不足しています' },
         { status: 400 }
       );
     }
-
-    console.log('セッション情報:', session);
-    console.log('ユーザーID:', session.user.id);
 
     // CSVデータをパース
     const records = parseCSV(csvData);

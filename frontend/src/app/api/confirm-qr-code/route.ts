@@ -27,8 +27,6 @@ export async function POST(req: NextRequest) {
       }
     })
     
-    console.log('検索条件:', { itemId, qrCodeUuid });
-    
     // リストアイテムが存在するかチェック（RLSを考慮）
     const { data: itemData, error: itemError } = await supabase
       .from('list_items')
@@ -40,8 +38,6 @@ export async function POST(req: NextRequest) {
       `)
       .eq('id', itemId)
       .single()
-    
-    console.log('検索結果:', { itemData, itemError });
     
     if (itemError) {
       return NextResponse.json(

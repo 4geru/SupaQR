@@ -65,11 +65,8 @@ export default function ListsPage() {
     setError(null);
     
     try {
-      console.log('Supabaseクライアントを作成中...', { url });
       const supabase = createClient(url, key);
-      
       // セッションを取得
-      console.log('セッション情報を取得中...');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -81,11 +78,7 @@ export default function ListsPage() {
         console.error('セッションが存在しません');
         throw new Error('認証セッションが存在しません');
       }
-
-      console.log('セッション情報:', { userId: session.user.id });
-
       // RSLに対応したクエリを実行
-      console.log('listsテーブルからデータを取得中...');
       const { data, error } = await supabase
         .from('lists')
         .select('*')
@@ -96,11 +89,8 @@ export default function ListsPage() {
         console.error('データ取得エラー:', error);
         throw error;
       }
-      
-      console.log('取得したデータ:', data);
-      
+
       if (data && data.length === 0) {
-        console.log('データが0件です');
         setError('リストが見つかりません。データが存在しないか、アクセス権限がない可能性があります。');
       }
       
@@ -132,8 +122,6 @@ export default function ListsPage() {
       // セッションを取得
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      console.log('セッション情報:', session);
-      console.log('セッションエラー:', sessionError);
       
       if (sessionError || !session) {
         throw new Error('セッションが存在しません。ログインが必要です。');
@@ -151,7 +139,6 @@ export default function ListsPage() {
         session: session,
       };
       
-      console.log('APIリクエストボディ:', requestBody);
       
       const response = await fetch('/api/upload-list', {
         method: 'POST',
