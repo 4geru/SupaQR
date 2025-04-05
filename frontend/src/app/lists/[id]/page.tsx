@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import QrCodeDisplay from '@/components/QrCodeDisplay';
 
 interface List {
   id: number;
@@ -35,6 +36,7 @@ export default function ListDetailPage() {
   const [supabaseKey, setSupabaseKey] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ListItem | null>(null);
 
   useEffect(() => {
     // ローカルストレージから接続情報を取得
@@ -142,6 +144,44 @@ export default function ListDetailPage() {
     }
   };
 
+  const handleConfirmQrCode = async () => {
+    if (!supabaseUrl || !supabaseKey || !selectedItem) return;
+    
+    setSelectedItem({
+      ...selectedItem,
+      confimed_qr_code: true
+    });
+    
+    try {
+      const response = await fetch('/api/confirm-qr-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supabaseUrl,
+          supabaseKey,
+          itemId: selectedItem.id,
+          qrCodeUuid: selectedItem.qr_code_uuid,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'QRコード確認中にエラーが発生しました');
+      }
+      
+    } catch (err) {
+      console.error('QRコード確認エラー:', err);
+      setError(`QRコードの確認に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
+      setSelectedItem({
+        ...selectedItem,
+        confimed_qr_code: false
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen p-8">
       <header className="mb-8">
@@ -160,7 +200,7 @@ export default function ListDetailPage() {
         )}
       </header>
 
-      <main className="flex-grow">
+      <main className="flex-grow flex">
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             <h3 className="font-bold mb-2">エラーが発生しました</h3>
@@ -175,48 +215,14 @@ export default function ListDetailPage() {
         ) : (
           <>
             {list ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
-                {/* CSVアップロードフォーム */}
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <h2 className="text-xl font-semibold mb-3">CSVアップロード</h2>
-                  
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-grow">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        CSVファイル
-                      </label>
-                      <input
-                        type="file"
-                        accept=".csv"
-                        onChange={handleFileUpload}
-                        disabled={uploading}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-                      />
-                    </div>
-                  </div>
-                  
-                  {uploading && (
-                    <div className="mt-3 flex items-center text-sm text-blue-600">
-                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
-                      アップロード中...
-                    </div>
-                  )}
-                  
-                  {uploadResult && (
-                    <div className={`mt-3 p-3 rounded-md text-sm ${uploadResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {uploadResult.message}
-                    </div>
-                  )}
-                </div>
-                
-                {/* アイテム一覧 */}
-                <div>
+              <div className="flex w-full">
+                {/* 左側: アイテム一覧 */}
+                <div className="w-1/2 p-4">
                   <h2 className="text-xl font-semibold mb-4">アイテム一覧</h2>
-                  
                   {items.length > 0 ? (
                     <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                       {items.map((item) => (
-                        <li key={item.id} className="py-3">
+                        <li key={item.id} className="py-3 cursor-pointer" onClick={() => setSelectedItem(item)}>
                           <div className="flex flex-col">
                             <div className="flex items-center mb-2">
                               <span className="text-gray-900 dark:text-white font-medium">
@@ -236,17 +242,6 @@ export default function ListDetailPage() {
                                 </div>
                               </div>
                             )}
-                            {item.qr_code_uuid && (
-                              <div className="mt-3 ml-6">
-                                <Link 
-                                  href={`/qr/${item.qr_code_uuid}`}
-                                  className="inline-flex items-center text-blue-600 hover:text-blue-800"
-                                >
-                                  <span className="mr-1">QRコードを表示</span>
-                                  <span className={`w-2 h-2 rounded-full ${item.confimed_qr_code ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                                </Link>
-                              </div>
-                            )}
                           </div>
                         </li>
                       ))}
@@ -257,10 +252,22 @@ export default function ListDetailPage() {
                     </div>
                   )}
                 </div>
-                
-                <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-                  <p>作成日: {new Date(list.created_at).toLocaleString('ja-JP')}</p>
-                  <p>リストID: {list.id}</p>
+
+                {/* 右側: QRコード表示 */}
+                <div className="w-1/2 p-4">
+                  {selectedItem && selectedItem.qr_code_uuid ? (
+                    <div>
+                      <h2 className="text-xl font-semibold mb-4">QRコード</h2>
+                      <QrCodeDisplay
+                        uuid={selectedItem.qr_code_uuid}
+                        confirmStatus={selectedItem.confimed_qr_code ? '確認済み' : '未確認'}
+                        csvData={selectedItem.csv_column}
+                        onConfirm={handleConfirmQrCode}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">QRコードを表示するアイテムを選択してください。</div>
+                  )}
                 </div>
               </div>
             ) : (

@@ -181,12 +181,6 @@ export default function QrCodePage() {
                 </button>
               </div>
             )}
-            
-            <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Link href="/" className="text-blue-600 hover:underline">
-                ホームに戻る
-              </Link>
-            </div>
           </div>
         ) : (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
