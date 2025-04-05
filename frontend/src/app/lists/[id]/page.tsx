@@ -34,8 +34,6 @@ export default function ListDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null);
   const [supabaseKey, setSupabaseKey] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null);
   const [selectedItem, setSelectedItem] = useState<ListItem | null>(null);
 
   useEffect(() => {
@@ -91,56 +89,6 @@ export default function ListDetailPage() {
       setError(`リスト詳細の取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !supabaseUrl || !supabaseKey) return;
-
-    setUploading(true);
-    setUploadResult(null);
-    
-    try {
-      // CSVファイルを読み込む
-      const fileContent = await file.text();
-      
-      // APIエンドポイントにデータを送信
-      const response = await fetch('/api/upload-list-items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          supabaseUrl,
-          supabaseKey,
-          listId,
-          csvData: fileContent,
-          fileName: file.name,
-        }),
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'アップロード中にエラーが発生しました');
-      }
-      
-      setUploadResult({
-        message: `${result.insertedCount}件のアイテムを追加しました`,
-        success: true,
-      });
-      
-      // データを再読み込み
-      fetchListDetails(supabaseUrl, supabaseKey, listId);
-    } catch (err) {
-      console.error('CSVアップロードエラー:', err);
-      setUploadResult({
-        message: `アップロードに失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`,
-        success: false,
-      });
-    } finally {
-      setUploading(false);
     }
   };
 

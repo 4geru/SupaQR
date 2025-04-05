@@ -17,6 +17,8 @@ export default function ListsPage() {
   const [error, setError] = useState<string | null>(null);
   const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null);
   const [supabaseKey, setSupabaseKey] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null);
 
   useEffect(() => {
     // ローカルストレージから接続情報を取得
@@ -52,7 +54,10 @@ export default function ListsPage() {
       }
       
       // listsテーブルからデータ取得
-      const { data, error } = await supabase.from('lists').select('*');
+      const { data, error } = await supabase
+        .from('lists')
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) {
         console.error('詳細エラー情報:', error);
@@ -69,6 +74,55 @@ export default function ListsPage() {
       setError(`リストの取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}\n\nSupabaseダッシュボードで以下を確認してください：\n1. listsテーブルが存在すること\n2. 適切な権限が設定されていること\n3. APIキーに適切な権限があること`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !supabaseUrl || !supabaseKey) return;
+
+    setUploading(true);
+    setUploadResult(null);
+    
+    try {
+      // CSVファイルを読み込む
+      const fileContent = await file.text();
+      
+      // APIエンドポイントにデータを送信
+      const response = await fetch('/api/upload-list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supabaseUrl,
+          supabaseKey,
+          csvData: fileContent,
+          fileName: file.name,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'アップロード中にエラーが発生しました');
+      }
+      
+      setUploadResult({
+        message: `リスト「${result.title}」を作成しました`,
+        success: true,
+      });
+      
+      // リストを再読み込み
+      fetchLists(supabaseUrl, supabaseKey);
+    } catch (err) {
+      console.error('CSVアップロードエラー:', err);
+      setUploadResult({
+        message: `アップロードに失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`,
+        success: false,
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -89,6 +143,39 @@ export default function ListsPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          {/* CSVアップロードフォーム */}
+          <div className="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h2 className="text-xl font-semibold mb-3">CSVアップロード</h2>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-grow">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  CSVファイル
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                />
+              </div>
+            </div>
+            
+            {uploading && (
+              <div className="mt-3 flex items-center text-sm text-blue-600">
+                <div className="animate-spin mr-2 h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                アップロード中...
+              </div>
+            )}
+            
+            {uploadResult && (
+              <div className={`mt-3 p-3 rounded-md text-sm ${uploadResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {uploadResult.message}
+              </div>
+            )}
+          </div>
+
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <h3 className="font-bold mb-2">エラーが発生しました</h3>
