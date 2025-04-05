@@ -12,3 +12,4 @@ add-qr-column-migration:
 	echo "ALTER TABLE $(table_name) ADD COLUMN qr_code_number UUID DEFAULT gen_random_uuid();" > $$migration_file; \
 	echo "UPDATE $(table_name) SET qr_code_number = gen_random_uuid() WHERE qr_code_number IS NULL;" >> $$migration_file; \
 	echo "Created migration file: $$migration_file"
+
