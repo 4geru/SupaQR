@@ -93,7 +93,17 @@ export default function ListDetailPage() {
   };
 
   const handleConfirmQrCode = async () => {
-    if (!supabaseUrl || !supabaseKey || !selectedItem) return;
+    if (!supabaseUrl || !supabaseKey || !selectedItem) {
+      setError('必要な情報が不足しています');
+      return;
+    }
+    
+    console.log('選択されたアイテム:', selectedItem);
+    
+    if (!selectedItem.qr_code_uuid) {
+      setError('QRコードUUIDが設定されていません');
+      return;
+    }
     
     setSelectedItem({
       ...selectedItem,
@@ -101,6 +111,12 @@ export default function ListDetailPage() {
     });
     
     try {
+      console.log('QRコード確認リクエスト:', {
+        itemId: selectedItem.id,
+        qrCodeUuid: selectedItem.qr_code_uuid,
+        listId: selectedItem.list_id
+      });
+      
       const response = await fetch('/api/confirm-qr-code', {
         method: 'POST',
         headers: {
@@ -119,6 +135,9 @@ export default function ListDetailPage() {
       if (!response.ok) {
         throw new Error(result.error || 'QRコード確認中にエラーが発生しました');
       }
+      
+      // 成功時の処理
+      console.log('QRコード確認成功:', result);
       
     } catch (err) {
       console.error('QRコード確認エラー:', err);

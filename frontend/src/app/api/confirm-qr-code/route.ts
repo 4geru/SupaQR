@@ -7,6 +7,12 @@ export async function POST(req: NextRequest) {
     
     // パラメータのバリデーション
     if (!supabaseUrl || !supabaseKey || !itemId || !qrCodeUuid) {
+      console.error('不足しているパラメータ:', {
+        supabaseUrl: !!supabaseUrl,
+        supabaseKey: !!supabaseKey,
+        itemId: !!itemId,
+        qrCodeUuid: !!qrCodeUuid,
+      });
       return NextResponse.json(
         { error: '必須パラメータが不足しています' },
         { status: 400 }
@@ -21,6 +27,8 @@ export async function POST(req: NextRequest) {
       }
     })
     
+    console.log('検索条件:', { itemId, qrCodeUuid });
+    
     // リストアイテムが存在するかチェック（RLSを考慮）
     const { data: itemData, error: itemError } = await supabase
       .from('list_items')
@@ -28,13 +36,12 @@ export async function POST(req: NextRequest) {
         id,
         qr_code_uuid,
         confimed_qr_code,
-        list:lists (
-          id,
-          user_id
-        )
+        list_id
       `)
       .eq('id', itemId)
       .single()
+    
+    console.log('検索結果:', { itemData, itemError });
     
     if (itemError) {
       return NextResponse.json(
@@ -68,10 +75,7 @@ export async function POST(req: NextRequest) {
         id,
         qr_code_uuid,
         confimed_qr_code,
-        list:lists (
-          id,
-          user_id
-        )
+        list_id
       `)
       .single()
     
