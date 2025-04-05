@@ -85,3 +85,4 @@ export default function QrCodeDisplay({ uuid, confirmStatus, csvData, onConfirm 
     </div>
   );
 } 
+

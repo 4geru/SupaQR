@@ -41,3 +41,4 @@ make add-qr-column-cli table_name=apples
 - テーブルが存在しない場合はエラーが発生します
 - マイグレーションを適用するには、別途`supabase db push`コマンドを実行する必要があります
 
+
