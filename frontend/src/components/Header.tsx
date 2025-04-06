@@ -33,6 +33,18 @@ export default function Header() {
     }
   }
 
+  // ステータスバッジのクラスを動的に決定する関数
+  const getStatusBadgeClass = () => {
+    switch (confirmStatus) {
+      case 'confirmed':
+        return `${styles.statusBadge} ${styles.statusConfirmed}`;
+      case 'checking':
+        return `${styles.statusBadge} ${styles.statusChecking}`;
+      default:
+        return `${styles.statusBadge} ${styles.statusUnconfirmed}`;
+    }
+  };
+
   const changeLanguage = (newLocale: string) => {
     // 言語を切り替える最もシンプルな方法
     if (newLocale !== locale) {
@@ -96,7 +108,7 @@ export default function Header() {
                 </button>
               </div>
               {user ? (
-                <div className="flex items-center space-x-4">
+                <div className="hidden sm:flex flex items-center space-x-4">
                   <span className="text-gray-700">
                     {user.email}
                   </span>
@@ -108,7 +120,7 @@ export default function Header() {
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center space-x-4">
+                <div className="hidden sm:flex flex items-center space-x-4">
                   <Link
                     href={`/${locale}/login`}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"

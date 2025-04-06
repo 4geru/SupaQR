@@ -6,6 +6,7 @@ import QRCode from 'react-qr-code';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import styles from './QrCodePage.module.css';
 
 interface ListItem {
   id: number;
@@ -116,58 +117,64 @@ export default function QrCodePage() {
     }
   };
 
+  // ステータスバッジのクラスを動的に決定する関数
+  const getStatusBadgeClass = () => {
+    switch (confirmStatus) {
+      case 'confirmed':
+        return `${styles.statusBadge} ${styles.statusConfirmed}`;
+      case 'checking':
+        return `${styles.statusBadge} ${styles.statusChecking}`;
+      default:
+        return `${styles.statusBadge} ${styles.statusUnconfirmed}`;
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen p-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold">{t('qrCode')}</h1>
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>{t('qrCode')}</h1>
       </header>
 
-      <main className="flex-grow">
+      <main className={styles.main}>
         {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingSpinner}></div>
           </div>
         ) : error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <h3 className="font-bold mb-2">{t('errors.title')}</h3>
-            <p className="whitespace-pre-line">{error}</p>
-            <Link href="/" className="inline-block mt-4 text-blue-600 hover:underline">
+          <div className={styles.errorBox}>
+            <h3 className={styles.errorTitle}>{t('errors.title')}</h3>
+            <p className={styles.errorMessage}>{error}</p>
+            <Link href="/" className={styles.backLink}>
               {t('backToHome')}
             </Link>
           </div>
         ) : listItem ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
-            <div className="flex flex-col items-center justify-center mb-6">
-              <div className="p-4 bg-white rounded-lg mb-4">
+          <div className={styles.itemContainer}>
+            <div className={styles.qrCodeContainer}>
+              <div className={styles.qrCodeWrapper}>
                 <QRCode
                   value={`${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${uuid}`}
-                  size={256}
+                  size={200} // 少し小さく調整 (必要に応じて変更)
                 />
               </div>
-              <p className="text-lg text-center mb-2">{t('qrCodeId')}: {uuid}</p>
-              <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                confirmStatus === 'confirmed' 
-                  ? 'bg-green-100 text-green-800' 
+              <p className={styles.qrCodeId}>{t('qrCodeId')}: {uuid}</p>
+              <div className={getStatusBadgeClass()}>
+                {confirmStatus === 'confirmed'
+                  ? t('confirmed')
                   : confirmStatus === 'checking'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-gray-100 text-gray-800'
-              }`}>
-                {confirmStatus === 'confirmed' 
-                  ? t('confirmed') 
-                  : confirmStatus === 'checking' 
-                    ? t('checking') 
+                    ? t('checking')
                     : t('unconfirmed')}
               </div>
             </div>
             
             {/* CSVデータ表示 */}
-            <div className="bg-gray-50 dark:bg-gray-900 rounded p-4">
-              <h3 className="font-semibold mb-3">{t('data')}</h3>
-              <div className="space-y-2">
+            <div className={styles.dataBox}>
+              <h3 className={styles.dataTitle}>{t('data')}</h3>
+              <div className={styles.dataGrid}>
                 {Object.entries(listItem.csv_column).map(([key, value]) => (
-                  <div key={key} className="flex">
-                    <span className="font-medium text-gray-600 dark:text-gray-400 mr-2 w-24">{key}:</span>
-                    <span className="text-gray-800 dark:text-gray-200">{value}</span>
+                  <div key={key} className={styles.dataRow}>
+                    <span className={styles.dataKey}>{key}:</span>
+                    <span className={styles.dataValue}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -175,15 +182,11 @@ export default function QrCodePage() {
             
             {/* 確認ボタン */}
             {!listItem.confimed_qr_code && (
-              <div className="flex justify-center mt-6">
+              <div className={styles.confirmButtonContainer}>
                 <button
                   onClick={handleConfirmQrCode}
                   disabled={confirmStatus === 'checking' || confirmStatus === 'confirmed'}
-                  className={`px-6 py-2 rounded-md font-medium ${
-                    confirmStatus === 'checking' || confirmStatus === 'confirmed'
-                      ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
+                  className={styles.confirmButton}
                 >
                   {confirmStatus === 'checking' ? `${t('checking')}...` : t('confirm')}
                 </button>
@@ -191,9 +194,9 @@ export default function QrCodePage() {
             )}
           </div>
         ) : (
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+          <div className={styles.notFoundBox}>
             <p>{t('listNotFound')}</p>
-            <Link href="/" className="inline-block mt-4 text-blue-600 hover:underline">
+            <Link href="/" className={styles.backLink}>
               {t('backToHome')}
             </Link>
           </div>

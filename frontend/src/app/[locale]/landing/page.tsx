@@ -3,14 +3,15 @@
 import React from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import styles from './LandingPage.module.css';
 
 export default function LandingPage() {
   const t = useTranslations('LandingPage');
 
   return (
-    <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-screen">
-        <div className="p-8 bg-white rounded-lg shadow-xl min-w-2xl max-w-2xl text-center">
-          <div className="flex justify-center mb-6">
+    <div className={styles.pageContainer}>
+        <div className={styles.contentBox}>
+          <div className={styles.logoContainer}>
              <Image
                 src="/images/SupaQR-icon.png"
                 alt="SupaQR Logo"
@@ -19,12 +20,12 @@ export default function LandingPage() {
                 priority
              />
           </div>
-          <h1 className="text-5xl font-extrabold text-gray-900 mb-3">SupaQR</h1>
-          <p className="text-xl text-gray-600 mb-8">{t('subtitle')}</p>
+          <h1 className={styles.title}>SupaQR</h1>
+          <p className={styles.subtitle}>{t('subtitle')}</p>
 
-          <div className="space-y-6 text-left">
-            <h2 className="text-3xl font-semibold text-gray-800 text-center">{t('usageTitle')}</h2>
-            <ol className="list-decimal list-inside space-y-3 text-lg text-gray-700 mx-auto max-w-2xl">
+          <div className={styles.usageSection}>
+            <h2 className={styles.usageTitle}>{t('usageTitle')}</h2>
+            <ol className={styles.usageList}>
               <li>{t('step1')}</li>
               <li>{t('step2')}</li>
               <li>{t('step3')}</li>
