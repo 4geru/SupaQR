@@ -5,7 +5,6 @@ import { User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import { SupabaseClient } from '@supabase/supabase-js'
 import { useLocale } from 'next-intl'
 
 interface List {

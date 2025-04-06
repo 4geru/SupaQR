@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth-context'
 import { useLocale } from 'next-intl'
 import { redirect } from 'next/navigation'
 

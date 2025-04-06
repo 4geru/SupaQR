@@ -23,7 +23,7 @@ export default function Header() {
       const newPath = `/${currentLocale}${pathname}`
       router.push(newPath)
     }
-  }, [pathname, locale, router])
+  }, [pathname, locale, router, currentLocale])
 
   const handleSignOut = async () => {
     try {

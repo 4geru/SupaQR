@@ -1,13 +1,7 @@
 import { redirect } from 'next/navigation'
 
-type Props = {
-  params: {
-    locale: string;
-  };
-};
-
-export default async function Home(props: Props) {
-  const params = await props.params;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function Home({ params }: any) {
   const locale = params.locale;
   redirect(`/${locale}/lists`)
 }
