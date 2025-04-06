@@ -87,16 +87,6 @@ export default function ListsPage() {
     checkAuth()
   }, [])
 
-  useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push('/login')
-      } else if (window.location.pathname === '/login') {
-        router.push('/lists')
-      }
-    }
-  }, [user, loading, router])
-
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
