@@ -1,0 +1,12 @@
+{
+  "Header": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "signup": "サインアップ"
+  },
+  "Lists": {
+    "title": "SupaQR",
+    "empty": "QRコードが見つかりません",
+    "create": "新規QRコード作成"
+  }
+} 

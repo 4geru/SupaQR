@@ -1,0 +1,12 @@
+{
+  "Header": {
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign Up"
+  },
+  "Lists": {
+    "title": "SupaQR",
+    "empty": "No QR codes found",
+    "create": "Create New QR Code"
+  }
+} 
