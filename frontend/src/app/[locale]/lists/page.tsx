@@ -184,6 +184,7 @@ export default function ListsPage() {
           {/* CSV Upload Form */}
           <div className="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <h2 className="text-xl font-semibold mb-3">{t('upload.title')}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('upload.description')}</p>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-grow">

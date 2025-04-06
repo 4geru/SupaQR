@@ -2,6 +2,7 @@ import QRCode from 'react-qr-code';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import LinkifyText from './LinkifyText';
 
 interface QrCodeDisplayProps {
   uuid: string;
@@ -67,7 +68,7 @@ export default function QrCodeDisplay({ uuid, confirmStatus, csvData, onConfirm 
           {Object.entries(csvData).map(([key, value]) => (
             <div key={key} className="flex">
               <span className="font-medium text-gray-600 dark:text-gray-400 mr-2 w-24">{key}:</span>
-              <span className="text-gray-800 dark:text-gray-200">{value}</span>
+              <LinkifyText text={value} />
             </div>
           ))}
         </div>
