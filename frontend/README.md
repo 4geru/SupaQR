@@ -1,126 +1,126 @@
-# Supabase QR Connector - フロントエンド
+# Supabase QR Connector - Frontend
 
-<img src="[ここに魅力的なスクリーンショットか GIF を挿入]" alt="アプリのスクリーンショット" width="600">
+<img src="[Insert attractive screenshot or GIF here]" alt="App Screenshot" width="600">
 
-**CSV をアップロードするだけで、あなたのデータが Supabase ですぐに使えるリストに！✨**
+**Just upload a CSV, and your data instantly becomes a usable list in Supabase! ✨**
 
-Supabase QR Connector のフロントエンドアプリケーションです。このアプリを使えば、お手持ちの CSV ファイルを驚くほど簡単に Supabase プロジェクトに取り込み、管理可能なリストを作成できます。面倒な手入力や複雑な API 連携はもう必要ありません！
+This is the frontend application for Supabase QR Connector. With this app, you can incredibly easily import your CSV files into your Supabase project and create manageable lists. No more tedious manual input or complex API integrations!
 
-**こんなあなたにおすすめ！**
+**Recommended for you if:**
 
-*   📈 Supabase を使っていて、もっと手軽にデータを登録したい方
-*   📄 CSV 形式のデータをサッと Web アプリケーションで扱いたい方
-*   ⏳ データ入力の手間を省き、開発や分析に集中したい方
-*   💡 QR コード連携など、Supabase を活用した新しいアイデアを実現したい方 (バックエンド機能との連携)
-
----
-
-## ✨ 主な機能
-
-*   **🚀 簡単 CSV アップロード:** ドラッグ＆ドロップ感覚で CSV ファイルをアップロード。
-*   **📄 自動リスト作成:** アップロードされた CSV を元に、Supabase 内に自動でリストとアイテムを作成。
-*   **🔐 安全な認証:** Supabase Auth による安全なユーザー認証。あなたのデータは守られます。
-*   **🌐 多言語対応:** 英語と日本語に対応 (他の言語も追加可能)。
-*   **📱 レスポンシブデザイン:** デスクトップでもモバイルでも快適に操作。
+*   📈 You use Supabase and want an easier way to register data.
+*   📄 You want to quickly handle CSV data in a web application.
+*   ⏳ You want to save time on data entry and focus on development or analysis.
+*   💡 You want to implement new ideas using Supabase, such as QR code integration (連携 with backend features).
 
 ---
 
-## 🚀 使ってみよう！ (セットアップ)
+## ✨ Key Features
 
-### 必要なもの
+*   **🚀 Easy CSV Upload:** Upload CSV files with a drag-and-drop feel.
+*   **📄 Automatic List Creation:** Automatically creates lists and items in Supabase based on the uploaded CSV.
+*   **🔐 Secure Authentication:** Secure user authentication via Supabase Auth. Your data is protected.
+*   **🌐 Multilingual Support:** Supports English and Japanese (other languages can be added).
+*   **📱 Responsive Design:** Operates comfortably on both desktop and mobile.
 
-*   [Node.js](https://nodejs.org/) (バージョン 18.x 以上推奨)
-*   [pnpm](https://pnpm.io/) (または npm/yarn)
-*   [Supabase プロジェクト](https://supabase.com/)
+---
 
-### 手順
+## 🚀 Get Started! (Setup)
 
-1.  **リポジトリをクローン:**
+### Prerequisites
+
+*   [Node.js](https://nodejs.org/) (Version 18.x or higher recommended)
+*   [pnpm](https://pnpm.io/) (or npm/yarn)
+*   A [Supabase Project](https://supabase.com/)
+
+### Steps
+
+1.  **Clone the repository:**
     ```bash
     git clone https://github.com/4geru/supabase-qr-connector.git
     cd supabase-qr-connector/frontend
     ```
 
-2.  **依存関係をインストール:**
+2.  **Install dependencies:**
     ```bash
     pnpm install
-    # または npm install / yarn install
+    # or npm install / yarn install
     ```
 
-3.  **環境変数を設定:**
-    `frontend` ディレクトリ直下に `.env` ファイルを作成し、あなたの Supabase プロジェクトの情報を設定します。
+3.  **Set up environment variables:**
+    Create a `.env` file in the root of the `frontend` directory and configure your Supabase project information.
 
     ```dotenv:.env
-    # あなたの Supabase プロジェクト URL を設定してください
+    # Set your Supabase project URL
     NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
-    # あなたの Supabase プロジェクトの Anon Key を設定してください
+    # Set your Supabase project Anon Key
     NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
 
-    # --- 注意 ---
-    # ここで設定するのは `anon` キーです。`service_role` キーではありません。
-    # このファイルは `.gitignore` に含まれているため、Git にコミットされません。
+    # --- Note ---
+    # Set the `anon` key here, not the `service_role` key.
+    # This file is included in `.gitignore` and will not be committed to Git.
     ```
-    *   Supabase プロジェクトの URL と Anon Key は、Supabase ダッシュボードの `Project Settings` > `API` で確認できます。
+    *   You can find your Supabase project URL and Anon Key in the Supabase dashboard under `Project Settings` > `API`.
 
-4.  **開発サーバーを起動:**
+4.  **Start the development server:**
     ```bash
     pnpm dev
-    # または npm run dev / yarn dev
+    # or npm run dev / yarn dev
     ```
 
-5.  **ブラウザでアクセス:**
-    [http://localhost:3000](http://localhost:3000) を開きます。 初回アクセス時はログインページ (例: `/en/login`) にリダイレクトされる場合があります。
+5.  **Access in browser:**
+    Open [http://localhost:3000](http://localhost:3000). You might be redirected to the login page (e.g., `/en/login`) on your first visit.
 
 ---
 
-## 使い方
+## How to Use
 
-1.  **サインアップ / ログイン:**
-    *   初めて利用する場合は、メールアドレスとパスワードでサインアップしてください。
-    *   アカウントがある場合はログインします。
-2.  **CSV ファイルの準備:**
-    *   **1行目をヘッダー行** とした CSV ファイルを用意します (例: `name,email,company`)。ヘッダーがないと正しく処理されません。
-    *   文字コードは **UTF-8** を推奨します。
-    *   例:
+1.  **Sign Up / Log In:**
+    *   If you're using it for the first time, sign up with your email and password.
+    *   If you have an account, log in.
+2.  **Prepare your CSV file:**
+    *   Prepare a CSV file with the **first row as the header** (e.g., `name,email,company`). It won't process correctly without a header.
+    *   **UTF-8** encoding is recommended.
+    *   Example:
         ```csv
         name,email,company
-        田中太郎,tanaka@example.com,株式会社A
-        山田花子,yamada@example.com,合同会社B
+        Taro Tanaka,tanaka@example.com,Company A Inc.
+        Hanako Yamada,yamada@example.com,Company B LLC
         ```
-3.  **CSV アップロード:**
-    *   ログイン後のリスト一覧ページ (`/ja/lists` や `/en/lists` など) にある「CSVファイルをアップロード」セクションでファイルを選択します。
-    *   アップロードが完了すると、メッセージが表示され、リスト一覧が自動で更新されます。
-4.  **リストの確認:**
-    *   アップロードされた CSV ファイル名 (拡張子 `.csv` を除いたもの) がタイトルとなった新しいリストが一覧に追加されます。
-    *   リストの ID またはタイトルをクリックすると、リストの詳細ページ (`/ja/lists/<リストID>`) に遷移し、登録されたアイテムを確認できます。
+3.  **Upload CSV:**
+    *   Select the file in the "Upload CSV file" section on the list page after logging in (e.g., `/ja/lists` or `/en/lists`).
+    *   Once the upload is complete, a message will appear, and the list will update automatically.
+4.  **Check the List:**
+    *   A new list titled with the uploaded CSV filename (excluding the `.csv` extension) will be added to the list.
+    *   Click the list ID or title to navigate to the list details page (`/en/lists/<list_id>`) and view the registered items.
 
 ---
 
-## 🛠️ 技術スタック
+## 🛠️ Tech Stack
 
 *   [Next.js](https://nextjs.org/) (App Router)
 *   [React](https://react.dev/)
 *   [TypeScript](https://www.typescriptlang.org/)
 *   [Supabase](https://supabase.com/) (Auth, Database)
 *   [Tailwind CSS](https://tailwindcss.com/)
-*   [next-intl](https://next-intl-docs.vercel.app/) (国際化)
+*   [next-intl](https://next-intl-docs.vercel.app/) (Internationalization)
 
 ---
 
-## ☁️ Vercel へのデプロイ
+## ☁️ Deploy to Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/4geru/supabase-qr-connector.git&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY&project-name=supabase-qr-connector-frontend&repository-name=supabase-qr-connector-frontend&root-directory=frontend)
 
-上のボタンをクリックするか、Vercel のダッシュボードから簡単にデプロイできます。
+Click the button above or deploy easily from the Vercel dashboard.
 
-**重要な設定:**
+**Important Settings:**
 
-*   **Framework Preset:** `Next.js` を選択してください。
-*   **Root Directory:** `frontend` を指定してください。
-*   **環境変数:** デプロイ時に `NEXT_PUBLIC_SUPABASE_URL` と `NEXT_PUBLIC_SUPABASE_ANON_KEY` を設定してください。
+*   **Framework Preset:** Select `Next.js`.
+*   **Root Directory:** Specify `frontend`.
+*   **Environment Variables:** Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` during deployment.
 
 ---
 
-## 🙌 コントリビュート
+## 🙌 Contributing
 
-フィードバックや貢献は大歓迎です！ 問題を見つけた場合は [Issue](https://github.com/4geru/supabase-qr-connector/issues) を作成したり、改善提案があれば [Pull Request](https://github.com/4geru/supabase-qr-connector/pulls) を送ってください。 (TODO: 正しいリポジトリURLに置き換えてください)
+Feedback and contributions are welcome! If you find an issue, please create an [Issue](https://github.com/4geru/supabase-qr-connector/issues). If you have suggestions for improvement, please send a [Pull Request](https://github.com/4geru/supabase-qr-connector/pulls). (TODO: Replace with the correct repository URL)
