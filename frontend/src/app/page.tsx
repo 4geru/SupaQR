@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 
-export default function Home() {
-  redirect('/en/lists')
-} 
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function Home({ params }: any) {
+  const locale = params.locale;
+  redirect(`/${locale}/landing`)
+}
