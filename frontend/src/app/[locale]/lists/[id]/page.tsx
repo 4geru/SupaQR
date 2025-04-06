@@ -30,6 +30,7 @@ export default function ListDetailPage() {
   const params = useParams();
   const listId = params?.id as string;
   const t = useTranslations('ListDetails');
+  const locale = params?.locale as string;
 
   const [list, setList] = useState<List | null>(null);
   const [items, setItems] = useState<ListItem[]>([]);
@@ -300,8 +301,8 @@ export default function ListDetailPage() {
                 <p>
                   {t('noAccess')}
                   <br />
-                  <Link href="/" className="text-blue-600 hover:underline">
-                    {t('backToHome')}
+                  <Link href={`/${locale}/lists`} className="text-blue-600 hover:underline">
+                    {t('backToLists')}
                   </Link>
                 </p>
               </div>
