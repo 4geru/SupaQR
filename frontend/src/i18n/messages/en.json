@@ -97,5 +97,13 @@
   "Auth": {
     "authenticating": "Authenticating...",
     "pleaseWait": "Please wait"
+  },
+  "LandingPage": {
+    "subtitle": "Easily generate and manage QR codes",
+    "usageTitle": "How to Use",
+    "step1": "Log in or sign up.",
+    "step2": "Click the \"Create QR Code\" button on the dashboard.",
+    "step3": "Enter the information you want in the QR code, such as URL or text.",
+    "step4": "Download or share the generated QR code."
   }
 } 
