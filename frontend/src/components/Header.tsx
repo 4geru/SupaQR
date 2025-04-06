@@ -33,18 +33,6 @@ export default function Header() {
     }
   }
 
-  // ステータスバッジのクラスを動的に決定する関数
-  const getStatusBadgeClass = () => {
-    switch (confirmStatus) {
-      case 'confirmed':
-        return `${styles.statusBadge} ${styles.statusConfirmed}`;
-      case 'checking':
-        return `${styles.statusBadge} ${styles.statusChecking}`;
-      default:
-        return `${styles.statusBadge} ${styles.statusUnconfirmed}`;
-    }
-  };
-
   const changeLanguage = (newLocale: string) => {
     // 言語を切り替える最もシンプルな方法
     if (newLocale !== locale) {
