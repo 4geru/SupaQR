@@ -49,7 +49,7 @@ export default function Header() {
     if (!user) {
       router.push(`/${locale}/landing`)
     } else {
-      router.push(`/${locale}`)
+      router.push(`/${locale}/lists`)
     }
   }
 

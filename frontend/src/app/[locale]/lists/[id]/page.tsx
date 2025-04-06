@@ -161,7 +161,7 @@ export default function ListDetailPage() {
     <div className="flex flex-col min-h-screen p-8">
       <header className="mb-8">
         <div className="mb-4">
-          <Link href="/" className="text-blue-600 hover:underline">
+          <Link href="/lists" className="text-blue-600 hover:underline">
             {t('backToHome')}
           </Link>
         </div>
