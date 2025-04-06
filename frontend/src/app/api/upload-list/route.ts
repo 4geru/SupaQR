@@ -1,18 +1,27 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { parse } from 'csv-parse/sync';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Extract Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authorizationヘッダーがありません' },
+        { status: 401 }
+      );
+    }
+    const accessToken = authHeader.split(' ')[1];
+
     const requestBody = await request.json(); 
-    
     const { listName, listDescription, listData, user } = requestBody;
     
     const userId = user.id;
     
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
         return NextResponse.json(
@@ -28,6 +37,23 @@ export async function POST(request: Request) {
         );
       }
       
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: `Bearer ${accessToken}` } },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      });
+      
+      const { data: { user: authUser }, error: getUserError } = await supabase.auth.getUser();
+      if (getUserError || !authUser || authUser.id !== userId) {
+        console.error('Token/User mismatch or getUser error:', getUserError);
+        return NextResponse.json(
+          { error: '認証トークンが無効か、ユーザーが一致しません' }, 
+          { status: 403 } 
+        );
+      }
+
       let records: Record<string, string>[];
       try {
         records = parse(listData, { columns: true, skip_empty_lines: true });
@@ -39,35 +65,7 @@ export async function POST(request: Request) {
         );
       }
       
-      const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-      
-      // Check if user exists in public.users table and create if not
-      const { data: existingUser, error: userCheckError } = await supabaseAdmin
-        .from('users')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (userCheckError) {
-        console.error('ユーザー確認エラー:', userCheckError);
-        throw userCheckError;
-      }
-
-      if (!existingUser) {
-        const { error: userInsertError } = await supabaseAdmin
-          .from('users')
-          .insert({ id: userId, email: user.email });
-
-        if (userInsertError) {
-          console.error('ユーザー作成エラー:', userInsertError);
-          // Handle potential unique constraint violation if user was created concurrently
-          if (userInsertError.code !== '23505') { 
-            throw userInsertError;
-          }
-        }
-      }
-      
-      const { data: newList, error: listInsertError } = await supabaseAdmin
+      const { data: newList, error: listInsertError } = await supabase
         .from('lists')
         .insert([
           {
@@ -90,7 +88,7 @@ export async function POST(request: Request) {
         csv_column_number: index + 1,
       }));
       
-      const { error: itemsError } = await supabaseAdmin
+      const { error: itemsError } = await supabase
         .from('list_items')
         .insert(listItems);
       
