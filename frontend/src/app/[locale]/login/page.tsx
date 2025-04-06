@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { useTranslations, useLocale } from 'next-intl'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -10,6 +12,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const { signIn, signInWithGoogle } = useAuth()
   const router = useRouter()
+  const locale = useLocale()
+  const t = useTranslations('Login')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,9 +21,9 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password)
-      router.push('/')
+      router.push(`/${locale}/lists`)
     } catch (err) {
-      setError('ログインに失敗しました。メールアドレスとパスワードを確認してください。')
+      setError(t('errors.loginFailed'))
     }
   }
 
@@ -27,7 +31,7 @@ export default function LoginPage() {
     try {
       await signInWithGoogle()
     } catch (err) {
-      setError('Google認証に失敗しました')
+      setError(t('errors.googleFailed'))
     }
   }
 
@@ -36,7 +40,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            アカウントにログイン
+            {t('title')}
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -48,7 +52,7 @@ export default function LoginPage() {
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">
-                メールアドレス
+                {t('email')}
               </label>
               <input
                 id="email"
@@ -56,14 +60,14 @@ export default function LoginPage() {
                 type="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="メールアドレス"
+                placeholder={t('email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
-                パスワード
+                {t('password')}
               </label>
               <input
                 id="password"
@@ -71,7 +75,7 @@ export default function LoginPage() {
                 type="password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="パスワード"
+                placeholder={t('password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -83,17 +87,17 @@ export default function LoginPage() {
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              ログイン
+              {t('loginButton')}
             </button>
           </div>
 
           <div className="text-center">
-            <a
-              href="/signup"
+            <Link
+              href={`/${locale}/signup`}
               className="text-sm text-indigo-600 hover:text-indigo-500"
             >
-              アカウントをお持ちでない方はこちら
-            </a>
+              {t('noAccount')}
+            </Link>
           </div>
         </form>
 
@@ -102,7 +106,7 @@ export default function LoginPage() {
             onClick={handleGoogleSignIn}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
           >
-            Googleでログイン
+            {t('googleLogin')}
           </button>
         </div>
       </div>

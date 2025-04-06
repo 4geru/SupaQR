@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import QRCode from 'react-qr-code';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface ListItem {
   id: number;
@@ -17,13 +18,14 @@ interface ListItem {
 }
 
 export default function QrCodePage() {
-  const params = useParams();
+  const params = useParams() || {};
   const uuid = params.uuid as string;
+  const t = useTranslations('ListDetails');
   
   const [listItem, setListItem] = useState<ListItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [confirmStatus, setConfirmStatus] = useState<'未確認' | '確認中' | '確認済み'>('未確認');
+  const [confirmStatus, setConfirmStatus] = useState<'unconfirmed' | 'checking' | 'confirmed'>('unconfirmed');
 
   useEffect(() => {
     const fetchQrCodeData = async () => {
@@ -35,7 +37,7 @@ export default function QrCodePage() {
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         
         if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+          throw new Error(t('errors.configMissing'));
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey);
@@ -54,18 +56,18 @@ export default function QrCodePage() {
         setListItem(data);
         
         // 確認ステータスを設定
-        setConfirmStatus(data.confimed_qr_code ? '確認済み' : '未確認');
+        setConfirmStatus(data.confimed_qr_code ? 'confirmed' : 'unconfirmed');
         
       } catch (err) {
         console.error('QRコードデータ取得エラー:', err);
-        setError(`QRコードデータの取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
+        setError(`${t('errors.qrConfirmFailed')}: ${err instanceof Error ? err.message : t('errors.unknown')}`);
       } finally {
         setLoading(false);
       }
     };
     
     fetchQrCodeData();
-  }, [uuid]);
+  }, [uuid, t]);
 
   const handleConfirmQrCode = async () => {
     if (!listItem) return;
@@ -74,11 +76,11 @@ export default function QrCodePage() {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      setError('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+      setError(t('errors.configMissing'));
       return;
     }
     
-    setConfirmStatus('確認中');
+    setConfirmStatus('checking');
     
     try {
       const response = await fetch('/api/confirm-qr-code', {
@@ -97,11 +99,11 @@ export default function QrCodePage() {
       const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(result.error || 'QRコード確認中にエラーが発生しました');
+        throw new Error(result.error || t('errors.qrConfirmFailed'));
       }
       
       // 成功したら状態を更新
-      setConfirmStatus('確認済み');
+      setConfirmStatus('confirmed');
       setListItem({
         ...listItem,
         confimed_qr_code: true
@@ -109,15 +111,15 @@ export default function QrCodePage() {
       
     } catch (err) {
       console.error('QRコード確認エラー:', err);
-      setError(`QRコードの確認に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
-      setConfirmStatus('未確認');
+      setError(`${t('errors.qrConfirmFailed')}: ${err instanceof Error ? err.message : t('errors.unknown')}`);
+      setConfirmStatus('unconfirmed');
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen p-8">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold">QRコード</h1>
+        <h1 className="text-3xl font-bold">{t('qrCode')}</h1>
       </header>
 
       <main className="flex-grow">
@@ -127,10 +129,10 @@ export default function QrCodePage() {
           </div>
         ) : error ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <h3 className="font-bold mb-2">エラーが発生しました</h3>
+            <h3 className="font-bold mb-2">{t('errors.title')}</h3>
             <p className="whitespace-pre-line">{error}</p>
             <Link href="/" className="inline-block mt-4 text-blue-600 hover:underline">
-              ホームに戻る
+              {t('backToHome')}
             </Link>
           </div>
         ) : listItem ? (
@@ -142,21 +144,25 @@ export default function QrCodePage() {
                   size={256}
                 />
               </div>
-              <p className="text-lg text-center mb-2">QRコードID: {uuid}</p>
+              <p className="text-lg text-center mb-2">{t('qrCodeId')}: {uuid}</p>
               <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                confirmStatus === '確認済み' 
+                confirmStatus === 'confirmed' 
                   ? 'bg-green-100 text-green-800' 
-                  : confirmStatus === '確認中'
+                  : confirmStatus === 'checking'
                     ? 'bg-yellow-100 text-yellow-800'
                     : 'bg-gray-100 text-gray-800'
               }`}>
-                {confirmStatus}
+                {confirmStatus === 'confirmed' 
+                  ? t('confirmed') 
+                  : confirmStatus === 'checking' 
+                    ? t('checking') 
+                    : t('unconfirmed')}
               </div>
             </div>
             
             {/* CSVデータ表示 */}
             <div className="bg-gray-50 dark:bg-gray-900 rounded p-4">
-              <h3 className="font-semibold mb-3">データ:</h3>
+              <h3 className="font-semibold mb-3">{t('data')}</h3>
               <div className="space-y-2">
                 {Object.entries(listItem.csv_column).map(([key, value]) => (
                   <div key={key} className="flex">
@@ -172,23 +178,23 @@ export default function QrCodePage() {
               <div className="flex justify-center mt-6">
                 <button
                   onClick={handleConfirmQrCode}
-                  disabled={confirmStatus === '確認中' || confirmStatus === '確認済み'}
+                  disabled={confirmStatus === 'checking' || confirmStatus === 'confirmed'}
                   className={`px-6 py-2 rounded-md font-medium ${
-                    confirmStatus === '確認中' || confirmStatus === '確認済み'
+                    confirmStatus === 'checking' || confirmStatus === 'confirmed'
                       ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  {confirmStatus === '確認中' ? '確認中...' : '確認する'}
+                  {confirmStatus === 'checking' ? `${t('checking')}...` : t('confirm')}
                 </button>
               </div>
             )}
           </div>
         ) : (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
-            <p>指定されたQRコードが見つかりません。</p>
+            <p>{t('listNotFound')}</p>
             <Link href="/" className="inline-block mt-4 text-blue-600 hover:underline">
-              ホームに戻る
+              {t('backToHome')}
             </Link>
           </div>
         )}

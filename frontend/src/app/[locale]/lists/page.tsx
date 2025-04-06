@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { useLocale } from 'next-intl'
 
 interface List {
   id: number
@@ -23,6 +24,7 @@ export default function ListsPage() {
   const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null)
   const router = useRouter()
   const { user } = useAuth()
+  const locale = useLocale()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -34,7 +36,7 @@ export default function ListsPage() {
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         
         if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Supabase connection information is not configured. Please check your environment variables.')
+          throw new Error(t('errors.configMissing'))
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey)
@@ -44,12 +46,12 @@ export default function ListsPage() {
         
         if (sessionError) {
           console.error('Session error:', sessionError)
-          throw new Error(`Authentication error: ${sessionError.message}`)
+          throw new Error(`${t('errors.auth')}: ${sessionError.message}`)
         }
 
         if (!session) {
           console.log('No session found. Redirecting to login page.')
-          router.push('/login')
+          router.push(`/${locale}/login`)
           return
         }
 
@@ -64,7 +66,7 @@ export default function ListsPage() {
         
         if (fetchError) {
           console.error('List fetch error:', fetchError)
-          throw new Error(`Failed to fetch lists: ${fetchError.message}`)
+          throw new Error(`${t('errors.fetchFailed')}: ${fetchError.message}`)
         }
 
         if (!data || data.length === 0) {
@@ -77,7 +79,7 @@ export default function ListsPage() {
         setLists(data)
       } catch (err) {
         console.error('Authentication check error:', err)
-        setError(err instanceof Error ? err.message : 'An unknown error occurred')
+        setError(err instanceof Error ? err.message : t('errors.unknown'))
         setLists([])
       } finally {
         setLoading(false)
@@ -85,7 +87,7 @@ export default function ListsPage() {
     }
     
     checkAuth()
-  }, [])
+  }, [locale, t, router])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -99,7 +101,7 @@ export default function ListsPage() {
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       
       if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Supabase connection information is not configured. Please check your environment variables.')
+        throw new Error(t('errors.configMissing'))
       }
 
       const supabase = createClient(supabaseUrl, supabaseKey)
@@ -108,7 +110,7 @@ export default function ListsPage() {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       if (sessionError || !session) {
-        throw new Error('No session found. Login required.')
+        throw new Error(t('errors.loginRequired'))
       }
 
       // Read CSV file
@@ -132,11 +134,11 @@ export default function ListsPage() {
       const result = await response.json()
       
       if (!response.ok) {
-        throw new Error(result.error || 'An error occurred during upload')
+        throw new Error(result.error || t('errors.uploadFailed'))
       }
       
       setUploadResult({
-        message: `List "${result.title}" created successfully`,
+        message: t('upload.success', { title: result.title }),
         success: true,
       })
       
@@ -148,14 +150,14 @@ export default function ListsPage() {
         .order('created_at', { ascending: false })
       
       if (fetchError) {
-        throw new Error(`Failed to fetch lists: ${fetchError.message}`)
+        throw new Error(`${t('errors.fetchFailed')}: ${fetchError.message}`)
       }
       
       setLists(data || [])
     } catch (err) {
       console.error('CSV upload error:', err)
       setUploadResult({
-        message: `Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        message: `${t('upload.failed')}: ${err instanceof Error ? err.message : t('errors.unknown')}`,
         success: false,
       })
     } finally {
@@ -168,7 +170,7 @@ export default function ListsPage() {
       <header className="mb-8">
         <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Lists fetched from Supabase lists table
+          {t('subtitle')}
         </p>
       </header>
 
@@ -176,12 +178,12 @@ export default function ListsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           {/* CSV Upload Form */}
           <div className="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h2 className="text-xl font-semibold mb-3">CSV Upload</h2>
+            <h2 className="text-xl font-semibold mb-3">{t('upload.title')}</h2>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-grow">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  CSV File
+                  {t('upload.csvFile')}
                 </label>
                 <input
                   type="file"
@@ -196,7 +198,7 @@ export default function ListsPage() {
             {uploading && (
               <div className="mt-3 flex items-center text-sm text-blue-600">
                 <div className="animate-spin mr-2 h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
-                Uploading...
+                {t('upload.uploading')}
               </div>
             )}
             
@@ -209,7 +211,7 @@ export default function ListsPage() {
 
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              <h3 className="font-bold mb-2">Error</h3>
+              <h3 className="font-bold mb-2">{t('errors.title')}</h3>
               <p className="whitespace-pre-line">{error}</p>
             </div>
           )}
@@ -226,16 +228,16 @@ export default function ListsPage() {
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          ID
+                          {t('table.id')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Title
+                          {t('table.title')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Description
+                          {t('table.description')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Created At
+                          {t('table.createdAt')}
                         </th>
                       </tr>
                     </thead>
@@ -243,12 +245,12 @@ export default function ListsPage() {
                       {lists.map((list) => (
                         <tr key={list.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            <Link href={`/lists/${list.id}`} className="text-blue-600 hover:underline">
+                            <Link href={`/${locale}/lists/${list.id}`} className="text-blue-600 hover:underline">
                               {list.id}
                             </Link>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            <Link href={`/lists/${list.id}`} className="text-blue-600 hover:underline">
+                            <Link href={`/${locale}/lists/${list.id}`} className="text-blue-600 hover:underline">
                               {list.title}
                             </Link>
                           </td>
@@ -274,7 +276,7 @@ export default function ListsPage() {
       </main>
       
       <footer className="mt-8 text-center text-sm text-gray-500">
-        <p>© 2024 Supabase Connector</p>
+        <p>{t('footer.copyright')}</p>
       </footer>
     </div>
   )

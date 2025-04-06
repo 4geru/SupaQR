@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import QrCodeDisplay from '@/components/QrCodeDisplay';
+import { useTranslations } from 'next-intl';
 
 interface List {
   id: number;
@@ -26,7 +27,8 @@ interface ListItem {
 
 export default function ListDetailPage() {
   const params = useParams();
-  const listId = params.id as string;
+  const listId = params?.id as string;
+  const t = useTranslations('ListDetails');
 
   const [list, setList] = useState<List | null>(null);
   const [items, setItems] = useState<ListItem[]>([]);
@@ -44,7 +46,7 @@ export default function ListDetailPage() {
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         
         if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+          throw new Error(t('errors.configMissing'));
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey);
@@ -77,23 +79,23 @@ export default function ListDetailPage() {
         setItems(itemsData || []);
       } catch (err) {
         console.error('リスト詳細取得エラー:', err);
-        setError(`リスト詳細の取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
+        setError(`リスト詳細の取得に失敗しました: ${err instanceof Error ? err.message : t('errors.unknown')}`);
       } finally {
         setLoading(false);
       }
     };
     
     fetchListDetails();
-  }, [listId]);
+  }, [listId, t]);
 
   const handleConfirmQrCode = async () => {
     if (!selectedItem) {
-      setError('必要な情報が不足しています');
+      setError(t('errors.missingInfo'));
       return;
     }
     
     if (!selectedItem.qr_code_uuid) {
-      setError('QRコードUUIDが設定されていません');
+      setError(t('errors.noQrUuid'));
       return;
     }
 
@@ -101,7 +103,7 @@ export default function ListDetailPage() {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      setError('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+      setError(t('errors.configMissing'));
       return;
     }
     
@@ -130,7 +132,7 @@ export default function ListDetailPage() {
       const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(result.error || 'QRコード確認中にエラーが発生しました');
+        throw new Error(result.error || t('errors.qrConfirmFailed'));
       }
       
       // 成功時の処理
@@ -142,7 +144,7 @@ export default function ListDetailPage() {
       
     } catch (err) {
       console.error('QRコード確認エラー:', err);
-      setError(`QRコードの確認に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
+      setError(`${t('errors.qrConfirmFailed')}: ${err instanceof Error ? err.message : t('errors.unknown')}`);
       
       // エラー時は元の状態に戻す
       const revertedItems = items.map(item => 
@@ -159,11 +161,11 @@ export default function ListDetailPage() {
       <header className="mb-8">
         <div className="mb-4">
           <Link href="/" className="text-blue-600 hover:underline">
-            ← ホームに戻る
+            {t('backToHome')}
           </Link>
         </div>
         <h1 className="text-3xl font-bold">
-          {loading ? 'リスト読み込み中...' : list?.title || 'リスト詳細'}
+          {loading ? t('loading') : list?.title || t('listDetails')}
         </h1>
         {list?.description && (
           <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -189,7 +191,10 @@ export default function ListDetailPage() {
             </span>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {items.filter(item => item.confimed_qr_code).length} / {items.length} アイテム確認済み
+            {t('itemsConfirmed', {
+              confirmed: items.filter(item => item.confimed_qr_code).length,
+              total: items.length
+            })}
           </p>
         </div>
       </header>
@@ -197,7 +202,7 @@ export default function ListDetailPage() {
       <main className="flex-grow flex">
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <h3 className="font-bold mb-2">エラーが発生しました</h3>
+            <h3 className="font-bold mb-2">{t('errors.title')}</h3>
             <p className="whitespace-pre-line">{error}</p>
           </div>
         )}
@@ -212,7 +217,7 @@ export default function ListDetailPage() {
               <div className="flex w-full">
                 {/* 左側: アイテム一覧 */}
                 <div className="w-1/2 p-4">
-                  <h2 className="text-xl font-semibold mb-4">アイテム一覧</h2>
+                  <h2 className="text-xl font-semibold mb-4">{t('itemList')}</h2>
                   {items.length > 0 ? (
                     <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                       {items.map((item) => (
@@ -220,27 +225,27 @@ export default function ListDetailPage() {
                           <div className="flex flex-col">
                             <div className="flex items-center mb-2">
                               <span className="text-gray-900 dark:text-white font-medium">
-                                行番号: {item.csv_column_number}
+                                {t('rowNumber')}: {item.csv_column_number}
                               </span>
                               {item.confimed_qr_code ? (
                                 <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                   <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                                   </svg>
-                                  確認済み
+                                  {t('confirmed')}
                                 </span>
                               ) : (
                                 <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                   <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                   </svg>
-                                  未確認
+                                  {t('unconfirmed')}
                                 </span>
                               )}
                             </div>
                             {item.csv_column && (
                               <div className="ml-6 bg-gray-50 dark:bg-gray-900 rounded p-3 text-sm">
-                                <h4 className="text-gray-700 dark:text-gray-300 mb-1 font-medium">CSV データ:</h4>
+                                <h4 className="text-gray-700 dark:text-gray-300 mb-1 font-medium">{t('csvData')}</h4>
                                 <div className="flex flex-col space-y-1">
                                   {Object.entries(item.csv_column).map(([key, value]) => (
                                     <div key={key} className="flex">
@@ -257,7 +262,7 @@ export default function ListDetailPage() {
                     </ul>
                   ) : (
                     <div className="py-4 text-center text-gray-500 dark:text-gray-400">
-                      このリストにはアイテムがありません。
+                      {t('noItems')}
                     </div>
                   )}
                 </div>
@@ -266,27 +271,27 @@ export default function ListDetailPage() {
                 <div className="w-1/2 p-4">
                   {selectedItem && selectedItem.qr_code_uuid ? (
                     <div>
-                      <h2 className="text-xl font-semibold mb-4">QRコード</h2>
+                      <h2 className="text-xl font-semibold mb-4">{t('qrCode')}</h2>
                       <QrCodeDisplay
                         uuid={selectedItem.qr_code_uuid}
-                        confirmStatus={selectedItem.confimed_qr_code ? '確認済み' : '未確認'}
+                        confirmStatus={selectedItem.confimed_qr_code ? t('confirmed') : t('unconfirmed')}
                         csvData={selectedItem.csv_column}
                         onConfirm={handleConfirmQrCode}
                       />
                     </div>
                   ) : (
-                    <div className="text-gray-500">QRコードを表示するアイテムを選択してください。</div>
+                    <div className="text-gray-500">{t('selectItem')}</div>
                   )}
                 </div>
               </div>
             ) : (
               <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded">
-                <h3 className="font-bold mb-2">リストが見つかりません</h3>
+                <h3 className="font-bold mb-2">{t('listNotFound')}</h3>
                 <p>
-                  指定されたIDのリストは存在しないか、アクセス権限がありません。
+                  {t('noAccess')}
                   <br />
                   <Link href="/" className="text-blue-600 hover:underline">
-                    ホームに戻る
+                    {t('backToHome')}
                   </Link>
                 </p>
               </div>
@@ -296,7 +301,7 @@ export default function ListDetailPage() {
       </main>
       
       <footer className="mt-8 text-center text-sm text-gray-500">
-        <p>© 2024 SupaQR</p>
+        <p>{t('copyright')}</p>
       </footer>
     </div>
   );

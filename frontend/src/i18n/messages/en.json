@@ -4,9 +4,98 @@
     "logout": "Logout",
     "signup": "Sign Up"
   },
+  "Login": {
+    "title": "Login to your account",
+    "email": "Email address",
+    "password": "Password",
+    "loginButton": "Login",
+    "noAccount": "Don't have an account?",
+    "googleLogin": "Login with Google",
+    "errors": {
+      "loginFailed": "Login failed. Please check your email and password.",
+      "googleFailed": "Google authentication failed"
+    }
+  },
   "Lists": {
     "title": "SupaQR",
+    "subtitle": "Lists fetched from Supabase lists table",
     "empty": "No QR codes found",
-    "create": "Create New QR Code"
+    "create": "Create New QR Code",
+    "upload": {
+      "title": "CSV Upload",
+      "csvFile": "CSV File",
+      "uploading": "Uploading...",
+      "success": "List \"{title}\" created successfully",
+      "failed": "Upload failed"
+    },
+    "table": {
+      "id": "ID",
+      "title": "Title",
+      "description": "Description",
+      "createdAt": "Created At"
+    },
+    "errors": {
+      "title": "Error",
+      "configMissing": "Supabase connection information is not configured. Please check your environment variables.",
+      "auth": "Authentication error",
+      "fetchFailed": "Failed to fetch lists",
+      "uploadFailed": "An error occurred during upload",
+      "loginRequired": "No session found. Login required.",
+      "unknown": "An unknown error occurred"
+    },
+    "footer": {
+      "copyright": "© 2024 Supabase Connector"
+    }
+  },
+  "ListDetails": {
+    "backToHome": "← Back to home",
+    "loading": "Loading list...",
+    "listDetails": "List Details",
+    "itemsConfirmed": "{confirmed} / {total} items confirmed",
+    "itemList": "Item List",
+    "noItems": "This list has no items.",
+    "rowNumber": "Row number",
+    "confirmed": "Confirmed",
+    "unconfirmed": "Unconfirmed",
+    "checking": "Checking",
+    "csvData": "CSV Data:",
+    "qrCode": "QR Code",
+    "qrCodeId": "QR Code ID",
+    "selectItem": "Select an item to display its QR code.",
+    "listNotFound": "List not found",
+    "noAccess": "The list with the specified ID does not exist or you don't have access to it.",
+    "openQrPage": "Open QR code page",
+    "copied": "Copied",
+    "copyLink": "Copy link",
+    "data": "Data:",
+    "confirm": "Confirm",
+    "errors": {
+      "title": "An error occurred",
+      "missingInfo": "Required information is missing",
+      "noQrUuid": "QR code UUID is not set",
+      "configMissing": "Supabase connection information is not configured. Please check your environment variables.",
+      "qrConfirmFailed": "Failed to confirm QR code",
+      "clipboardError": "Failed to copy to clipboard",
+      "unknown": "Unknown error"
+    },
+    "copyright": "© 2024 SupaQR"
+  },
+  "SignUp": {
+    "title": "Create an account",
+    "email": "Email address",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "signUpButton": "Create account",
+    "loading": "Creating...",
+    "hasAccount": "Already have an account?",
+    "errors": {
+      "passwordMismatch": "Passwords do not match",
+      "signUpFailed": "Failed to create account. Please check your information."
+    },
+    "emailSent": "Confirmation email sent. Please click the link in the email to complete your registration."
+  },
+  "Auth": {
+    "authenticating": "Authenticating...",
+    "pleaseWait": "Please wait"
   }
 } 
