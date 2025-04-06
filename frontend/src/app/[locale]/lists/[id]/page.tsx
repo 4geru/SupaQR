@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import QrCodeDisplay from '@/components/QrCodeDisplay';
 import { useTranslations } from 'next-intl';
+import LinkifyText from '@/components/LinkifyText';
 
 interface List {
   id: number;
@@ -257,7 +258,9 @@ export default function ListDetailPage() {
                                   {Object.entries(item.csv_column).map(([key, value]) => (
                                     <div key={key} className="flex">
                                       <span className="font-medium text-gray-600 dark:text-gray-400 mr-2 w-24">{key}:</span>
-                                      <span className="text-gray-800 dark:text-gray-200">{value}</span>
+                                      <span className="text-gray-800 dark:text-gray-200">
+                                        <LinkifyText text={value} />
+                                      </span>
                                     </div>
                                   ))}
                                 </div>

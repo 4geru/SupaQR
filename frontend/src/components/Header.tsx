@@ -33,6 +33,18 @@ export default function Header() {
     }
   }
 
+  // ステータスバッジのクラスを動的に決定する関数
+  const getStatusBadgeClass = () => {
+    switch (confirmStatus) {
+      case 'confirmed':
+        return `${styles.statusBadge} ${styles.statusConfirmed}`;
+      case 'checking':
+        return `${styles.statusBadge} ${styles.statusChecking}`;
+      default:
+        return `${styles.statusBadge} ${styles.statusUnconfirmed}`;
+    }
+  };
+
   const changeLanguage = (newLocale: string) => {
     // 言語を切り替える最もシンプルな方法
     if (newLocale !== locale) {
@@ -45,73 +57,88 @@ export default function Header() {
     }
   }
 
+  const handleLogoClick = () => {
+    if (!user) {
+      router.push(`/${locale}/landing`)
+    } else {
+      router.push(`/${locale}`)
+    }
+  }
+
   return (
-    <header className="bg-white shadow">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link href={`/${locale}`} className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Image
-                  src="/images/SupaQR-icon.png"
-                  alt="SupaQR Icon"
-                  width={32}
-                  height={32}
-                />
-                <span>SupaQR</span>
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => changeLanguage('en')}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  locale === 'en' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => changeLanguage('ja')}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  locale === 'ja' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                日本語
-              </button>
-            </div>
-            {user ? (
-              <div className="hidden sm:flex items-center space-x-4">
-                <span className="text-gray-700">
-                  {user.email}
-                </span>
+    <>
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
                 <button
-                  onClick={handleSignOut}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  type="button"
+                  onClick={handleLogoClick}
+                  className="text-xl font-bold text-gray-900 flex items-center gap-2 focus:outline-none"
+                  aria-label={user ? "SupaQR Home" : "SupaQR Landing"}
                 >
-                  {t('logout')}
+                  <Image
+                    src="/images/SupaQR-icon.png"
+                    alt="SupaQR Icon"
+                    width={32}
+                    height={32}
+                  />
+                  <span>SupaQR</span>
                 </button>
               </div>
-            ) : (
-              <div className="hidden sm:flex items-center space-x-4">
-                <Link
-                  href={`/${locale}/login`}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => changeLanguage('en')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    locale === 'en' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
-                  {t('login')}
-                </Link>
-                <Link
-                  href={`/${locale}/signup`}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  EN
+                </button>
+                <button
+                  onClick={() => changeLanguage('ja')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    locale === 'ja' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
-                  {t('signup')}
-                </Link>
+                  日本語
+                </button>
               </div>
-            )}
+              {user ? (
+                <div className="hidden sm:flex flex items-center space-x-4">
+                  <span className="text-gray-700">
+                    {user.email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    {t('logout')}
+                  </button>
+                </div>
+              ) : (
+                <div className="hidden sm:flex items-center space-x-4">
+                  <Link
+                    href={`/${locale}/login`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    {t('login')}
+                  </Link>
+                  <Link
+                    href={`/${locale}/signup`}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    {t('signup')}
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   )
 } 

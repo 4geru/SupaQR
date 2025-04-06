@@ -23,6 +23,7 @@
     "upload": {
       "title": "CSVアップロード",
       "csvFile": "CSVファイル",
+      "description": "CSVファイルをアップロードして、新しいQRコードリストを作成します。",
       "uploading": "アップロード中...",
       "success": "リスト「{title}」が正常に作成されました",
       "failed": "アップロード失敗"
@@ -66,7 +67,7 @@
     "openQrPage": "QRコードページを開く",
     "copied": "コピーしました",
     "copyLink": "リンクをコピー",
-    "data": "データ:",
+    "data": "情報:",
     "confirm": "確認する",
     "errors": {
       "title": "エラーが発生しました",
@@ -96,5 +97,13 @@
   "Auth": {
     "authenticating": "認証中...",
     "pleaseWait": "しばらくお待ちください"
+  },
+  "LandingPage": {
+    "subtitle": "QRコードを簡単に生成・管理",
+    "usageTitle": "使い方",
+    "step1": "ログインまたは新規登録します。",
+    "step2": "ダッシュボードで「QRコードを作成」ボタンをクリックします。",
+    "step3": "URLやテキストなど、QRコードにしたい情報を入力します。",
+    "step4": "生成されたQRコードをダウンロードまたは共有します。"
   }
 } 

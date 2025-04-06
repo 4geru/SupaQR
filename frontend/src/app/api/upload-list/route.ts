@@ -17,6 +17,9 @@ export async function POST(request: NextRequest) {
     const requestBody = await request.json(); 
     const { listName, listDescription, listData, user } = requestBody;
     
+    // Remove file extension from listName if it exists
+    const titleWithoutExtension = listName.includes('.') ? listName.substring(0, listName.lastIndexOf('.')) : listName;
+
     const userId = user.id;
     
     try {
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
         .from('lists')
         .insert([
           {
-            title: listName,
+            title: titleWithoutExtension,
             description: listDescription,
             user_id: userId,
           },

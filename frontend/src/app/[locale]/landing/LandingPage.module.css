@@ -1,0 +1,72 @@
+/* frontend/src/app/[locale]/landing/LandingPage.module.css */
+.container {
+  padding: 3rem 1rem; /* モバイル用にpaddingを調整 */
+}
+
+.card {
+  padding: 2rem;
+  min-width: auto; /* モバイル用に最小幅を解除 */
+  max-width: 100%; /* モバイル用に最大幅を設定 */
+}
+
+.logoContainer {
+  margin-bottom: 1.5rem; /* モバイル用にマージンを調整 */
+}
+
+.title {
+  font-size: 2.5rem; /* モバイル用にフォントサイズを調整 */
+  margin-bottom: 0.75rem; /* モバイル用にマージンを調整 */
+}
+
+.subtitle {
+  font-size: 1.125rem; /* モバイル用にフォントサイズを調整 */
+  margin-bottom: 2rem; /* モバイル用にマージンを調整 */
+}
+
+.usageTitle {
+  font-size: 1.875rem; /* モバイル用にフォントサイズを調整 */
+}
+
+.stepList {
+  font-size: 1rem; /* モバイル用にフォントサイズを調整 */
+  max-width: 100%; /* モバイル用に最大幅を設定 */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+/* デスクトップ用のスタイル (例: 768px以上) */
+@media (min-width: 768px) {
+  .container {
+    padding: 3rem 1rem; /* デスクトップ用のpadding */
+  }
+
+  .card {
+    padding: 2rem;
+    min-width: 42rem; /* 2xl に相当 */
+    max-width: 42rem; /* 2xl に相当 */
+  }
+
+   .logoContainer {
+      margin-bottom: 1.5rem;
+   }
+
+  .title {
+    font-size: 3.75rem; /* 5xl に相当 */
+    margin-bottom: 0.75rem; /* mb-3 */
+  }
+
+  .subtitle {
+    font-size: 1.25rem; /* xl に相当 */
+    margin-bottom: 2rem; /* mb-8 */
+  }
+
+  .usageTitle {
+      font-size: 1.875rem; /* 3xl に相当 */
+  }
+
+  .stepList {
+      font-size: 1.125rem; /* lg に相当 */
+      max-width: 42rem; /* 2xl に相当 */
+  }
+} 
