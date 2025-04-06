@@ -216,12 +216,19 @@ export default function ListDetailPage() {
             {list ? (
               <div className="flex w-full">
                 {/* 左側: アイテム一覧 */}
-                <div className="w-1/2 p-4">
-                  <h2 className="text-xl font-semibold mb-4">{t('itemList')}</h2>
+                <div className="w-1/2 p-4 overflow-y-auto max-h-[calc(100vh-200px)]">
                   {items.length > 0 ? (
                     <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                       {items.map((item) => (
-                        <li key={item.id} className="py-3 cursor-pointer" onClick={() => setSelectedItem(item)}>
+                        <li
+                          key={item.id}
+                          className={`py-3 px-2 cursor-pointer transition-colors duration-150 ease-in-out ${
+                            selectedItem?.id === item.id
+                              ? 'bg-blue-100 dark:bg-blue-900 rounded'
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                          }`}
+                          onClick={() => setSelectedItem(item)}
+                        >
                           <div className="flex flex-col">
                             <div className="flex items-center mb-2">
                               <span className="text-gray-900 dark:text-white font-medium">
@@ -268,7 +275,7 @@ export default function ListDetailPage() {
                 </div>
 
                 {/* 右側: QRコード表示 */}
-                <div className="w-1/2 p-4">
+                <div className="w-1/2 p-4 sticky top-0 self-start">
                   {selectedItem && selectedItem.qr_code_uuid ? (
                     <div>
                       <h2 className="text-xl font-semibold mb-4">{t('qrCode')}</h2>

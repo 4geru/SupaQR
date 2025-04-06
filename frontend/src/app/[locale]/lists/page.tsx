@@ -233,9 +233,6 @@ export default function ListsPage() {
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          {t('table.id')}
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           {t('table.title')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -249,11 +246,6 @@ export default function ListsPage() {
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {lists.map((list) => (
                         <tr key={list.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            <Link href={`/${locale}/lists/${list.id}`} className="text-blue-600 hover:underline">
-                              {list.id}
-                            </Link>
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                             <Link href={`/${locale}/lists/${list.id}`} className="text-blue-600 hover:underline">
                               {list.title}
