@@ -116,18 +116,25 @@ export default function ListsPage() {
       // Read CSV file
       const fileContent = await file.text()
       
+      // Get Access Token
+      const accessToken = session.access_token
+      if (!accessToken) {
+        throw new Error(t('errors.tokenMissing'))
+      }
+
       // Send data to API endpoint
       const requestBody = {
         listData: fileContent,
         listName: file.name,
         listDescription: '', // Add empty description for now
-        user: session?.user, // Pass the user object from session
+        user: session?.user, // Pass the user object for user creation check
       }
       
       const response = await fetch('/api/upload-list', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`, // Add Authorization header
         },
         body: JSON.stringify(requestBody),
       })
