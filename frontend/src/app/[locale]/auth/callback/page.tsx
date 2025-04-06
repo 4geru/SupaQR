@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@supabase/supabase-js';
 import { useLocale, useTranslations } from 'next-intl'
 
 export default function AuthCallback() {
@@ -10,7 +10,14 @@ export default function AuthCallback() {
   const searchParams = useSearchParams()
   const locale = useLocale()
   const t = useTranslations('Auth')
-  const supabase = createClient()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(t('errors.configMissing'));
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
