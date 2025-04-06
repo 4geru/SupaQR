@@ -54,14 +54,14 @@ export default async function LocaleLayout(props: Props) {
   return (
     <html lang={currentLocale} className={inter.variable}>
       <body>
-        <NextIntlClientProvider locale={currentLocale} messages={messages}>
-          <AuthProvider>
+        <AuthProvider>
+          <NextIntlClientProvider locale={currentLocale} messages={messages}>
             <Header />
             <main className="min-h-screen bg-gray-50">
               {children}
             </main>
-          </AuthProvider>
-        </NextIntlClientProvider>
+          </NextIntlClientProvider>
+        </AuthProvider>
       </body>
     </html>
   )
