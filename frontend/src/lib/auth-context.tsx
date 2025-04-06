@@ -123,7 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 未認証ユーザーはログイン、サインアップ、QRコードページ以外にアクセスできない
         if (!pathWithoutLocale.startsWith('/login') &&
             !pathWithoutLocale.startsWith('/signup') &&
-            !pathWithoutLocale.startsWith('/qr/')) {
+            !pathWithoutLocale.startsWith('/qr/') &&
+            !pathWithoutLocale.startsWith('/landing')) {
           router.push(`/${locale}/login`);
         }
       } else {
