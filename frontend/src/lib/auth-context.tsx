@@ -117,15 +117,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!loading) {
       const currentPath = window.location.pathname;
       
+      // 言語パスプレフィックスを無視して実際のルートパスを取得
+      const pathWithoutLocale = currentPath.replace(/^\/[a-z]{2}\//, '/');
+      console.log('パス解析:', { 
+        currentPath, 
+        pathWithoutLocale,
+        userExists: !!user
+      });
+      
       if (!user) {
         // 未認証ユーザーはログインページ以外にアクセスできない
-        if (currentPath !== '/login') {
+        if (!pathWithoutLocale.startsWith('/login')) {
+          console.log('未認証ユーザーをログインページにリダイレクト', { currentPath });
           router.push('/login');
         }
       } else {
         // 認証済みユーザーはログインページにアクセスできない
-        if (currentPath === '/login') {
+        if (pathWithoutLocale.startsWith('/login')) {
+          console.log('認証済みユーザーをホームページにリダイレクト', { currentPath });
           router.push('/');
+        } else {
+          console.log('認証済みユーザー、現在のパス:', { currentPath, userId: user.id });
         }
       }
     }

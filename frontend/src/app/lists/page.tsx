@@ -17,18 +17,30 @@ interface List {
 export default function ListsPage() {
   const t = useTranslations('Lists')
   const [lists, setLists] = useState<List[]>([])
-  const [loading, setLoading] = useState(true)
+  const [listLoading, setListLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null)
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    const checkAuth = async () => {
-      setLoading(true)
+    if (authLoading) {
+      setListLoading(true)
+      return
+    }
+
+    if (!user) {
+      console.log('User not authenticated, redirecting to login.')
+      router.push('/login')
+      setListLoading(false)
+      return
+    }
+
+    console.log('User authenticated, fetching lists for user:', user.id)
+    const fetchLists = async () => {
+      setListLoading(true)
       setError(null)
-      
       try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -39,27 +51,10 @@ export default function ListsPage() {
 
         const supabase = createClient(supabaseUrl, supabaseKey)
 
-        // Check session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          throw new Error(`Authentication error: ${sessionError.message}`)
-        }
-
-        if (!session) {
-          console.log('No session found. Redirecting to login page.')
-          router.push('/login')
-          return
-        }
-
-        console.log('Authentication successful:', session.user.id)
-        
-        // Get lists if authenticated
         const { data, error: fetchError } = await supabase
           .from('lists')
           .select('*')
-          .eq('user_id', session.user.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
         
         if (fetchError) {
@@ -67,111 +62,164 @@ export default function ListsPage() {
           throw new Error(`Failed to fetch lists: ${fetchError.message}`)
         }
 
-        if (!data || data.length === 0) {
-          console.log('No lists found')
-          setLists([])
-          return
-        }
-
-        console.log('Lists fetched successfully:', data.length, 'items')
-        setLists(data)
+        console.log('Lists fetched successfully:', data?.length ?? 0, 'items')
+        setLists(data || [])
       } catch (err) {
-        console.error('Authentication check error:', err)
+        console.error('Error fetching lists:', err)
         setError(err instanceof Error ? err.message : 'An unknown error occurred')
         setLists([])
       } finally {
-        setLoading(false)
+        setListLoading(false)
       }
     }
     
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push('/login')
-      } else if (window.location.pathname === '/login') {
-        router.push('/lists')
-      }
-    }
-  }, [user, loading, router])
+    fetchLists()
+  }, [user, authLoading, router])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
+    const fileInput = event.target;
     if (!file) return
+
+    console.log('ファイルアップロード開始:', file.name, file.size, file.type);
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setUploadResult({
+        message: 'CSVファイルのみアップロード可能です',
+        success: false,
+      })
+      fileInput.value = ''
+      return
+    }
 
     setUploading(true)
     setUploadResult(null)
     
     try {
+      if (!user) {
+        throw new Error('User not authenticated. Please login again.')
+      }
+
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       
       if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Supabase connection information is not configured. Please check your environment variables.')
+        throw new Error('Supabase connection information is not configured.')
       }
 
       const supabase = createClient(supabaseUrl, supabaseKey)
       
-      // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError || !session) {
-        throw new Error('No session found. Login required.')
-      }
-
-      // Read CSV file
       const fileContent = await file.text()
       
-      // Send data to API endpoint
+      if (!fileContent || fileContent.trim() === '') {
+        throw new Error('ファイルが空です')
+      }
+
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session?.access_token) {
+         throw new Error('Could not retrieve session information or access token.')
+      }
+      
+      console.log('認証情報取得完了:', { 
+        accessTokenExists: !!session.access_token,
+        tokenLength: session.access_token?.length || 0,
+        tokenFirstChars: session.access_token ? session.access_token.substring(0, 5) + '...' : 'なし'
+      });
+      
+      console.log('ユーザー情報:', {
+        userId: user.id,
+        email: user.email
+      });
+
+      // ユーザーIDが有効か確認
+      if (!user.id) {
+        throw new Error('有効なユーザーIDがありません');
+      }
+
+      // 環境変数の確認
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('Supabase接続情報がありません', {
+          supabaseUrl: !!supabaseUrl,
+          supabaseKey: !!supabaseKey
+        });
+        throw new Error('Supabase接続情報が設定されていません');
+      }
+      
+      // すべてのパラメータが明示的に設定されていることを確認
       const requestBody = {
         csvData: fileContent,
         fileName: file.name,
-        session: session,
-      }
+        session: session
+      };
+      
+      // JSON文字列に変換して確認
+      const requestBodyString = JSON.stringify(requestBody);
+      console.log('JSON文字列化したrequestBody:', requestBodyString.substring(0, 100) + '...');
+      console.log('sessionのユーザーID:', session?.user?.id);
+      
+      console.log('API呼び出し前のrequestBody:', {
+        fileName: requestBody.fileName,
+        csvDataLength: requestBody.csvData.length,
+        sessionExists: !!requestBody.session,
+        sessionUserIdExists: !!requestBody.session?.user?.id
+      });
       
       const response = await fetch('/api/upload-list', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody),
       })
       
+      // レスポンスステータスを確認
+      console.log('APIレスポンスステータス:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+       
       const result = await response.json()
-      
+      console.log('APIレスポンス:', result);
+        
       if (!response.ok) {
         throw new Error(result.error || 'An error occurred during upload')
       }
-      
+        
       setUploadResult({
-        message: `List "${result.title}" created successfully`,
+        message: result.message || `List "${result.title || 'New List'}" created successfully`,
         success: true,
       })
-      
-      // Reload lists
+        
       const { data, error: fetchError } = await supabase
         .from('lists')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-      
+        
       if (fetchError) {
-        throw new Error(`Failed to fetch lists: ${fetchError.message}`)
+        console.error(`Failed to re-fetch lists after upload: ${fetchError.message}`)
+      } else {
+         setLists(data || [])
       }
-      
-      setLists(data || [])
+        
     } catch (err) {
       console.error('CSV upload error:', err)
+      console.log('エラー詳細情報:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : null,
+      });
       setUploadResult({
-        message: `Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        message: `Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`, 
         success: false,
       })
     } finally {
       setUploading(false)
+      fileInput.value = ''
     }
   }
+
+  const pageLoading = authLoading
 
   return (
     <div className="flex flex-col min-h-screen p-8">
@@ -196,6 +244,7 @@ export default function ListsPage() {
                 <input
                   type="file"
                   accept=".csv"
+                  key={uploadResult ? Date.now() : 'initial'}
                   onChange={handleFileUpload}
                   disabled={uploading}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
@@ -217,17 +266,21 @@ export default function ListsPage() {
             )}
           </div>
 
-          {error && (
+          {error && !pageLoading && !listLoading && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <h3 className="font-bold mb-2">Error</h3>
               <p className="whitespace-pre-line">{error}</p>
             </div>
           )}
           
-          {loading ? (
+          {pageLoading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
+          ) : listLoading ? (
+             <div className="flex justify-center items-center py-8">
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+             </div>
           ) : (
             <>
               {lists.length > 0 ? (
