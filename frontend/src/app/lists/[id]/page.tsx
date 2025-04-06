@@ -32,74 +32,76 @@ export default function ListDetailPage() {
   const [items, setItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null);
-  const [supabaseKey, setSupabaseKey] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<ListItem | null>(null);
 
   useEffect(() => {
-    // ローカルストレージから接続情報を取得
-    const storedUrl = localStorage.getItem('supabaseUrl');
-    const storedKey = localStorage.getItem('supabaseKey');
+    const fetchListDetails = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // リスト情報を取得
+        const { data: listData, error: listError } = await supabase
+          .from('lists')
+          .select('*')
+          .eq('id', listId)
+          .single();
+        
+        if (listError) {
+          throw listError;
+        }
+        
+        setList(listData);
+        
+        // リストアイテムを取得
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('list_items')
+          .select('*')
+          .eq('list_id', listId)
+          .order('csv_column_number', { ascending: true });
+        
+        if (itemsError) {
+          console.error('アイテム取得エラー:', itemsError);
+          // アイテム取得エラーは表示するだけで、致命的とはしない
+        }
+        
+        setItems(itemsData || []);
+      } catch (err) {
+        console.error('リスト詳細取得エラー:', err);
+        setError(`リスト詳細の取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    if (storedUrl && storedKey) {
-      setSupabaseUrl(storedUrl);
-      setSupabaseKey(storedKey);
-      fetchListDetails(storedUrl, storedKey, listId);
-    } else {
-      setLoading(false);
-      setError('Supabase接続情報が設定されていません。接続設定ページで接続してください。');
-    }
+    fetchListDetails();
   }, [listId]);
 
-  const fetchListDetails = async (url: string, key: string, id: string) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const supabase = createClient(url, key);
-      
-      // リスト情報を取得
-      const { data: listData, error: listError } = await supabase
-        .from('lists')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (listError) {
-        throw listError;
-      }
-      
-      setList(listData);
-      
-      // リストアイテムを取得
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('list_items')
-        .select('*')
-        .eq('list_id', id)
-        .order('csv_column_number', { ascending: true });
-      
-      if (itemsError) {
-        console.error('アイテム取得エラー:', itemsError);
-        // アイテム取得エラーは表示するだけで、致命的とはしない
-      }
-      
-      setItems(itemsData || []);
-    } catch (err) {
-      console.error('リスト詳細取得エラー:', err);
-      setError(`リスト詳細の取得に失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleConfirmQrCode = async () => {
-    if (!supabaseUrl || !supabaseKey || !selectedItem) {
+    if (!selectedItem) {
       setError('必要な情報が不足しています');
       return;
     }
     
     if (!selectedItem.qr_code_uuid) {
       setError('QRコードUUIDが設定されていません');
+      return;
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      setError('Supabaseの接続情報が設定されていません。環境変数を確認してください。');
       return;
     }
     
@@ -111,7 +113,7 @@ export default function ListDetailPage() {
     );
     setItems(updatedItems);
     
-    try {      
+    try {
       const response = await fetch('/api/confirm-qr-code', {
         method: 'POST',
         headers: {
@@ -156,8 +158,8 @@ export default function ListDetailPage() {
     <div className="flex flex-col min-h-screen p-8">
       <header className="mb-8">
         <div className="mb-4">
-          <Link href="/lists" className="text-blue-600 hover:underline">
-            ← リスト一覧に戻る
+          <Link href="/" className="text-blue-600 hover:underline">
+            ← ホームに戻る
           </Link>
         </div>
         <h1 className="text-3xl font-bold">
@@ -283,8 +285,8 @@ export default function ListDetailPage() {
                 <p>
                   指定されたIDのリストは存在しないか、アクセス権限がありません。
                   <br />
-                  <Link href="/lists" className="text-blue-600 hover:underline">
-                    リスト一覧に戻る
+                  <Link href="/" className="text-blue-600 hover:underline">
+                    ホームに戻る
                   </Link>
                 </p>
               </div>
@@ -294,7 +296,7 @@ export default function ListDetailPage() {
       </main>
       
       <footer className="mt-8 text-center text-sm text-gray-500">
-        <p>© 2024 Supabase Connector</p>
+        <p>© 2024 SupaQR</p>
       </footer>
     </div>
   );

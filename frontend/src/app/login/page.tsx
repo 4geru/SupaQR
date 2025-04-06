@@ -8,8 +8,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const { signIn, signInWithGoogle } = useAuth()
   const router = useRouter()
-  const { signIn } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,6 +20,14 @@ export default function LoginPage() {
       router.push('/')
     } catch (err) {
       setError('ログインに失敗しました。メールアドレスとパスワードを確認してください。')
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle()
+    } catch (err) {
+      setError('Google認証に失敗しました')
     }
   }
 
@@ -88,6 +96,15 @@ export default function LoginPage() {
             </a>
           </div>
         </form>
+
+        <div className="mt-6">
+          <button
+            onClick={handleGoogleSignIn}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            Googleでログイン
+          </button>
+        </div>
       </div>
     </div>
   )
