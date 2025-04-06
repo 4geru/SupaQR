@@ -18,7 +18,6 @@
   },
   "Lists": {
     "title": "SupaQR",
-    "subtitle": "Supabaseのリストテーブルから取得したリスト",
     "empty": "QRコードが見つかりません",
     "create": "新規QRコード作成",
     "upload": {

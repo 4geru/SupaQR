@@ -18,7 +18,6 @@
   },
   "Lists": {
     "title": "SupaQR",
-    "subtitle": "Lists fetched from Supabase lists table",
     "empty": "No QR codes found",
     "create": "Create New QR Code",
     "upload": {

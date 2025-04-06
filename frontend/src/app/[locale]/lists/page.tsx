@@ -169,9 +169,6 @@ export default function ListsPage() {
     <div className="flex flex-col min-h-screen p-8">
       <header className="mb-8">
         <h1 className="text-3xl font-bold">{t('title')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          {t('subtitle')}
-        </p>
       </header>
 
       <main className="flex-grow">
