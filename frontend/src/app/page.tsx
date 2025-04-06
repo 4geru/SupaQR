@@ -127,6 +127,8 @@ export default function ListsPage() {
         csvData: fileContent,
         fileName: file.name,
         session: session,
+        supabaseUrl,
+        supabaseKey,
       };
       
       const response = await fetch('/api/upload-list', {
