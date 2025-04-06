@@ -6,25 +6,24 @@ import { useAuth } from '@/lib/auth-context'
 import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const { user, signOut } = useAuth()
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('Header')
+  const router = useRouter()
+  const currentLocale = locale
 
-  console.log('現在の言語:', locale)
-  console.log('現在のパス:', pathname)
-
-  // URLに言語情報が含まれているか確認し、含まれていない場合はリダイレクト
   useEffect(() => {
-    // すでにマッチしている場合はスキップ
-    if (pathname && !pathname.match(/^\/[a-z]{2}(\/|$)/)) {
-      console.log('言語情報がURLに含まれていません。リダイレクトします。')
-      const newPath = `/${locale}${pathname === '/' ? '' : pathname}`
-      window.location.href = newPath
+    // 言語情報がパスに含まれているかチェック
+    if (pathname && locale && !pathname.startsWith(`/${locale}`)) {
+      // 現在のパスから言語セグメントを除外し、新しいロケールを追加してリダイレクト
+      const newPath = `/${currentLocale}${pathname}`
+      router.push(newPath)
     }
-  }, [pathname, locale])
+  }, [pathname, locale, router])
 
   const handleSignOut = async () => {
     try {

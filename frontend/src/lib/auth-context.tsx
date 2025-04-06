@@ -119,25 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // 言語パスプレフィックスを無視して実際のルートパスを取得
       const pathWithoutLocale = currentPath.replace(/^\/[a-z]{2}\//, '/');
-      console.log('パス解析:', { 
-        currentPath, 
-        pathWithoutLocale,
-        userExists: !!user
-      });
       
       if (!user) {
         // 未認証ユーザーはログインページ以外にアクセスできない
         if (!pathWithoutLocale.startsWith(`/${locale}/login`) && !pathWithoutLocale.startsWith('/signup')) {
-          console.log('未認証ユーザーをログインページにリダイレクト', { currentPath });
           router.push(`/${locale}/login`);
         }
       } else {
         // 認証済みユーザーはログインページにアクセスできない
         if (pathWithoutLocale.startsWith(`/${locale}/login`)) {
-          console.log('認証済みユーザーをホームページにリダイレクト', { currentPath });
           router.push(`/${locale}/lists`);
-        } else {
-          console.log('認証済みユーザー、現在のパス:', { currentPath, userId: user.id });
         }
       }
     }
