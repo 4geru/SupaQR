@@ -23,6 +23,7 @@
     "upload": {
       "title": "CSVアップロード",
       "csvFile": "CSVファイル",
+      "description": "CSVファイルをアップロードして、新しいQRコードリストを作成します。",
       "uploading": "アップロード中...",
       "success": "リスト「{title}」が正常に作成されました",
       "failed": "アップロード失敗"

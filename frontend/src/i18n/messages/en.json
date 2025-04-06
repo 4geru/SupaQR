@@ -23,6 +23,7 @@
     "upload": {
       "title": "CSV Upload",
       "csvFile": "CSV File",
+      "description": "Upload a CSV file to create a new QR code list.",
       "uploading": "Uploading...",
       "success": "List \"{title}\" created successfully",
       "failed": "Upload failed"
