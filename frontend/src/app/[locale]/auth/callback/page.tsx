@@ -16,38 +16,15 @@ export default function AuthCallback() {
         if (event === 'SIGNED_IN') {
           if (session?.user) {
             try {
-              const { data: user, error: selectError } = await supabase
-                .from('users')
-                .select('id')
-                .eq('id', session.user.id)
-                .single()
+              const { data: session } = await supabase.auth.getSession()
 
-              if (selectError && selectError.code !== 'PGRST116') {
-                console.error('Error checking user:', selectError)
-                throw selectError
+              if (!session || !session.session || !session.session.user) {
+                throw new Error('Session or user not found.')
               }
 
-              if (!user) {
-                console.log(`User data not found for id ${session.user.id}. Creating new user entry.`)
-                const { error: insertError } = await supabase
-                  .from('users')
-                  .insert({
-                    id: session.user.id,
-                    email: session.user.email,
-                  })
-
-                if (insertError) {
-                  console.error('Error creating user entry:', insertError)
-                  throw insertError
-                }
-                console.log(`User entry created for id ${session.user.id}.`)
-              } else {
-                console.log(`User entry found for id ${session.user.id}.`)
-              }
-
-              router.push(`/${locale}/lists`)
+              router.push('/')
             } catch (error) {
-              console.error('Error ensuring user profile:', error)
+              console.error('Error during session handling:', error)
             }
           } else {
             console.error('No user session found after SIGNED_IN event.')

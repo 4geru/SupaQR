@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import QrCodeDisplay from '@/components/QrCodeDisplay';
@@ -31,6 +31,8 @@ export default function ListDetailPage() {
   const listId = params?.id as string;
   const t = useTranslations('ListDetails');
 
+  const [supabase] = useState(() => createPagesBrowserClient());
+
   const [list, setList] = useState<List | null>(null);
   const [items, setItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,15 +45,6 @@ export default function ListDetailPage() {
       setError(null);
       
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-        
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error(t('errors.configMissing'));
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        
         // リスト情報を取得
         const { data: listData, error: listError } = await supabase
           .from('lists')
@@ -87,7 +80,7 @@ export default function ListDetailPage() {
     };
     
     fetchListDetails();
-  }, [listId, t]);
+  }, [listId, t, supabase]);
 
   const handleConfirmQrCode = async () => {
     if (!selectedItem) {
@@ -100,14 +93,6 @@ export default function ListDetailPage() {
       return;
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      setError(t('errors.configMissing'));
-      return;
-    }
-    
     // ローカルで即座に状態を更新
     const updatedItems = items.map(item => 
       item.id === selectedItem.id 
@@ -123,8 +108,6 @@ export default function ListDetailPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          supabaseUrl,
-          supabaseKey,
           itemId: selectedItem.id,
           qrCodeUuid: selectedItem.qr_code_uuid,
         }),

@@ -7,6 +7,7 @@ import styles from './LandingPage.module.css';
 
 export default function LandingPage() {
   const t = useTranslations('LandingPage');
+  
 
   return (
     <div className={styles.pageContainer}>

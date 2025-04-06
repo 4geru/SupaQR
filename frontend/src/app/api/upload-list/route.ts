@@ -57,6 +57,36 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Check if user exists in the users table and insert if not
+      const { data: existingUser, error: selectUserError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (selectUserError && selectUserError.code !== 'PGRST116') { // PGRST116: No rows found
+        console.error('Error checking user in users table:', selectUserError);
+        throw selectUserError;
+      }
+
+      if (!existingUser) {
+        console.log(`User data not found for id ${userId} in users table. Creating new user entry.`);
+        const { error: insertUserError } = await supabase
+          .from('users')
+          .insert({
+            id: userId,
+            email: authUser.email, // Assuming authUser has email, adjust if necessary
+          });
+
+        if (insertUserError) {
+          console.error('Error creating user entry in users table:', insertUserError);
+          throw insertUserError;
+        }
+        console.log(`User entry created in users table for id ${userId}.`);
+      } else {
+        console.log(`User entry found in users table for id ${userId}.`);
+      }
+
       let records: Record<string, string>[];
       try {
         records = parse(listData, { columns: true, skip_empty_lines: true });
