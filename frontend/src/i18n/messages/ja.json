@@ -1,0 +1,100 @@
+{
+  "Header": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "signup": "サインアップ"
+  },
+  "Login": {
+    "title": "アカウントにログイン",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "loginButton": "ログイン",
+    "noAccount": "アカウントをお持ちでない方はこちら",
+    "googleLogin": "Googleでログイン",
+    "errors": {
+      "loginFailed": "ログインに失敗しました。メールアドレスとパスワードを確認してください。",
+      "googleFailed": "Google認証に失敗しました"
+    }
+  },
+  "Lists": {
+    "title": "SupaQR",
+    "empty": "QRコードが見つかりません",
+    "create": "新規QRコード作成",
+    "upload": {
+      "title": "CSVアップロード",
+      "csvFile": "CSVファイル",
+      "uploading": "アップロード中...",
+      "success": "リスト「{title}」が正常に作成されました",
+      "failed": "アップロード失敗"
+    },
+    "table": {
+      "id": "ID",
+      "title": "タイトル",
+      "description": "説明",
+      "createdAt": "作成日時"
+    },
+    "errors": {
+      "title": "エラー",
+      "configMissing": "Supabase接続情報が設定されていません。環境変数を確認してください。",
+      "auth": "認証エラー",
+      "fetchFailed": "リストの取得に失敗しました",
+      "uploadFailed": "アップロード中にエラーが発生しました",
+      "loginRequired": "セッションが見つかりません。ログインが必要です。",
+      "unknown": "不明なエラーが発生しました"
+    },
+    "footer": {
+      "copyright": "© 2024 Supabase Connector"
+    }
+  },
+  "ListDetails": {
+    "backToHome": "← ホームに戻る",
+    "loading": "リスト読み込み中...",
+    "listDetails": "リスト詳細",
+    "itemsConfirmed": "{confirmed} / {total} アイテム確認済み",
+    "itemList": "アイテム一覧",
+    "noItems": "このリストにはアイテムがありません。",
+    "rowNumber": "行番号",
+    "confirmed": "確認済み",
+    "unconfirmed": "未確認",
+    "checking": "確認中",
+    "csvData": "CSV データ:",
+    "qrCode": "QRコード",
+    "qrCodeId": "QRコードID",
+    "selectItem": "QRコードを表示するアイテムを選択してください。",
+    "listNotFound": "リストが見つかりません",
+    "noAccess": "指定されたIDのリストは存在しないか、アクセス権限がありません。",
+    "openQrPage": "QRコードページを開く",
+    "copied": "コピーしました",
+    "copyLink": "リンクをコピー",
+    "data": "データ:",
+    "confirm": "確認する",
+    "errors": {
+      "title": "エラーが発生しました",
+      "missingInfo": "必要な情報が不足しています",
+      "noQrUuid": "QRコードUUIDが設定されていません",
+      "configMissing": "Supabaseの接続情報が設定されていません。環境変数を確認してください。",
+      "qrConfirmFailed": "QRコードの確認に失敗しました",
+      "clipboardError": "クリップボードへのコピーに失敗しました",
+      "unknown": "不明なエラー"
+    },
+    "copyright": "© 2024 SupaQR"
+  },
+  "SignUp": {
+    "title": "アカウントを作成",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "confirmPassword": "パスワード（確認）",
+    "signUpButton": "アカウントを作成",
+    "loading": "作成中...",
+    "hasAccount": "すでにアカウントをお持ちの方はこちら",
+    "errors": {
+      "passwordMismatch": "パスワードが一致しません",
+      "signUpFailed": "アカウントの作成に失敗しました。入力内容を確認してください。"
+    },
+    "emailSent": "確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。"
+  },
+  "Auth": {
+    "authenticating": "認証中...",
+    "pleaseWait": "しばらくお待ちください"
+  }
+} 

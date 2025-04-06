@@ -30,12 +30,45 @@ function parseCSV(csvData: string): Record<string, string>[] {
 export async function POST(request: Request) {
   try {
     const requestBody = await request.json(); 
+    
+    console.log('リクエスト全体:', JSON.stringify(requestBody).substring(0, 200));
 
-    const { supabaseUrl, supabaseKey, csvData, fileName, session } = requestBody;
-
-    if (!supabaseUrl || !supabaseKey || !csvData || !session) {
+    const { csvData, fileName, session } = requestBody;
+    
+    // sessionオブジェクトからuserIdを取得
+    const userId = session?.user?.id;
+    
+    console.log('リクエスト受信:', { 
+      fileNameReceived: !!fileName, 
+      csvDataReceived: !!csvData, 
+      sessionReceived: !!session,
+      sessionUserIdExists: !!userId,
+      userId: userId,
+      requestBodyKeys: Object.keys(requestBody)
+    });
+    
+    // 環境変数からSupabase接続情報を取得
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    console.log('環境変数:', {
+      supabaseUrlExists: !!supabaseUrl,
+      supabaseKeyExists: !!supabaseKey
+    });
+    
+    // パラメータのバリデーション
+    if (!supabaseUrl || !supabaseKey || !csvData || !fileName || !userId) {
+      console.error('不足しているパラメータ:', {
+        supabaseUrl: !!supabaseUrl,
+        supabaseKey: !!supabaseKey,
+        csvData: !!csvData,
+        fileName: !!fileName,
+        sessionExists: !!session,
+        userId: !!userId,
+        userIdValue: userId
+      });
       return NextResponse.json(
-        { error: '必要なパラメータが不足しています' },
+        { error: '必須パラメータが不足しています' },
         { status: 400 }
       );
     }
@@ -50,54 +83,74 @@ export async function POST(request: Request) {
       );
     }
 
-    // Supabaseクライアントを作成
+    console.log('CSVパース完了:', { recordsCount: records.length });
+
+    // Supabaseクライアントを作成（認証情報を正しく設定）
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
+      },
+      auth: {
+        persistSession: false
       }
     });
 
-    // リストを作成
-    const { data: list, error: listError } = await supabase
-      .from('lists')
-      .insert([
-        {
-          title: fileName.replace('.csv', ''),
-          description: `${records.length}件のアイテムを含むリスト`,
-          user_id: session.user.id,
-        },
-      ])
-      .select()
-      .single();
+    try {
+      // リストを作成する前にユーザーを確認
+      console.log('挿入するユーザーID:', userId);
+      
+      // リストを作成
+      const { data: list, error: listError } = await supabase
+        .from('lists')
+        .insert([
+          {
+            title: fileName.replace('.csv', ''),
+            description: `${records.length}件のアイテムを含むリスト`,
+            user_id: userId,
+          },
+        ])
+        .select()
+        .single();
 
-    if (listError) {
-      throw listError;
+      if (listError) {
+        console.error('リスト作成エラー:', listError);
+        throw listError;
+      }
+
+      // リストアイテムを作成
+      const listItems = records.map((record, index) => ({
+        list_id: list.id,
+        csv_column: record,
+        csv_column_number: index + 1,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('list_items')
+        .insert(listItems);
+
+      if (itemsError) {
+        console.error('リストアイテム作成エラー:', itemsError);
+        throw itemsError;
+      }
+
+      // 成功レスポンス
+      return NextResponse.json({
+        message: `${list.title}リストを作成しました`,
+        title: list.title,
+        id: list.id,
+        itemCount: records.length,
+      });
+    } catch (error) {
+      console.error('リスト作成エラー:', error);
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : '不明なエラーが発生しました' },
+        { status: 500 }
+      );
     }
-
-    // リストアイテムを作成
-    const listItems = records.map((record, index) => ({
-      list_id: list.id,
-      csv_column: record,
-      csv_column_number: index + 1,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from('list_items')
-      .insert(listItems);
-
-    if (itemsError) {
-      throw itemsError;
-    }
-
-    return NextResponse.json({
-      title: list.title,
-      id: list.id,
-      itemCount: records.length,
-    });
   } catch (error) {
-    console.error('リスト作成エラー:', error);
+    console.error('リクエスト処理エラー:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : '不明なエラーが発生しました' },
       { status: 500 }

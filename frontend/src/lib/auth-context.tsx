@@ -6,6 +6,7 @@ import { supabase } from './supabase'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { useLocale } from 'next-intl'
 
 interface List {
   id: number;
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error: null
   })
   const router = useRouter()
+  const locale = useLocale()
 
   const updateListState = (updates: Partial<ListState>) => {
     setListState(prev => ({ ...prev, ...updates }));
@@ -117,19 +119,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!loading) {
       const currentPath = window.location.pathname;
       
+      // 言語パスプレフィックスを無視して実際のルートパスを取得
+      const pathWithoutLocale = currentPath.replace(/^\/[a-z]{2}\//, '/');
+      console.log('パス解析:', { 
+        currentPath, 
+        pathWithoutLocale,
+        userExists: !!user
+      });
+      
       if (!user) {
         // 未認証ユーザーはログインページ以外にアクセスできない
-        if (currentPath !== '/login') {
-          router.push('/login');
+        if (!pathWithoutLocale.startsWith(`/${locale}/login`) && !pathWithoutLocale.startsWith('/signup')) {
+          console.log('未認証ユーザーをログインページにリダイレクト', { currentPath });
+          router.push(`/${locale}/login`);
         }
       } else {
         // 認証済みユーザーはログインページにアクセスできない
-        if (currentPath === '/login') {
-          router.push('/');
+        if (pathWithoutLocale.startsWith(`/${locale}/login`)) {
+          console.log('認証済みユーザーをホームページにリダイレクト', { currentPath });
+          router.push(`/${locale}/lists`);
+        } else {
+          console.log('認証済みユーザー、現在のパス:', { currentPath, userId: user.id });
         }
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, locale]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -137,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     })
     if (error) throw error
-    router.push('/')
+    router.push(`/${locale}/lists`)
   }
 
   const signOut = async () => {
@@ -157,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error
       
       // ログインページにリダイレクト
-      router.push('/login')
+      router.push(`/${locale}/login`)
     } catch (error) {
       console.error('ログアウトエラー:', error)
       throw error
@@ -168,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`
+        redirectTo: `${window.location.origin}/${locale}/lists`
       }
     })
     if (error) throw error
