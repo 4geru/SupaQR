@@ -67,11 +67,6 @@ export default function ListsPage() {
           throw new Error(`${t('errors.fetchFailed')}: ${fetchError.message}`)
         }
 
-        if (error) {
-          setError(error.message)
-          return
-        }
-
         if (!data || data.length === 0) {
           setLists([])
           return
@@ -124,9 +119,10 @@ export default function ListsPage() {
       
       // Send data to API endpoint
       const requestBody = {
-        csvData: fileContent,
-        fileName: file.name,
-        session: session,
+        listData: fileContent,
+        listName: file.name,
+        listDescription: '', // Add empty description for now
+        user: session?.user, // Pass the user object from session
       }
       
       const response = await fetch('/api/upload-list', {

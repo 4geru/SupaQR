@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         );
       }
       
-      let records: ParseResult<Record<string, string>>;
+      let records: Record<string, string>[];
       try {
         records = parse(listData, { columns: true, skip_empty_lines: true });
       } catch (parseError) {
@@ -40,6 +40,32 @@ export async function POST(request: Request) {
       }
       
       const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+      
+      // Check if user exists in public.users table and create if not
+      const { data: existingUser, error: userCheckError } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (userCheckError) {
+        console.error('ユーザー確認エラー:', userCheckError);
+        throw userCheckError;
+      }
+
+      if (!existingUser) {
+        const { error: userInsertError } = await supabaseAdmin
+          .from('users')
+          .insert({ id: userId, email: user.email });
+
+        if (userInsertError) {
+          console.error('ユーザー作成エラー:', userInsertError);
+          // Handle potential unique constraint violation if user was created concurrently
+          if (userInsertError.code !== '23505') { 
+            throw userInsertError;
+          }
+        }
+      }
       
       const { data: newList, error: listInsertError } = await supabaseAdmin
         .from('lists')
@@ -58,7 +84,7 @@ export async function POST(request: Request) {
         throw listInsertError;
       }
       
-      const listItems = records.map((record, index) => ({
+      const listItems = records.map((record: Record<string, string>, index: number) => ({
         list_id: newList.id,
         csv_column: record,
         csv_column_number: index + 1,
