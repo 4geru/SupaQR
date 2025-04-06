@@ -120,7 +120,7 @@ export default function Header() {
                   </button>
                 </div>
               ) : (
-                <div className="hidden sm:flex items-center space-x-4">
+                <div className="hidden sm:flex flex items-center space-x-4">
                   <Link
                     href={`/${locale}/login`}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"

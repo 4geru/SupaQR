@@ -9,9 +9,9 @@ export default function LandingPage() {
   const t = useTranslations('LandingPage');
 
   return (
-    <div className={`${styles.container} flex justify-center items-center min-h-screen`}>
-        <div className={`${styles.card} bg-white rounded-lg shadow-xl text-center`}>
-          <div className={`${styles.logoContainer} flex justify-center`}>
+    <div className={styles.pageContainer}>
+        <div className={styles.contentBox}>
+          <div className={styles.logoContainer}>
              <Image
                 src="/images/SupaQR-icon.png"
                 alt="SupaQR Logo"
@@ -20,12 +20,12 @@ export default function LandingPage() {
                 priority
              />
           </div>
-          <h1 className={`${styles.title} font-extrabold text-gray-900`}>SupaQR</h1>
-          <p className={`${styles.subtitle} text-gray-600`}>{t('subtitle')}</p>
+          <h1 className={styles.title}>SupaQR</h1>
+          <p className={styles.subtitle}>{t('subtitle')}</p>
 
-          <div className="space-y-6 text-left">
-            <h2 className={`${styles.usageTitle} font-semibold text-gray-800 text-center`}>{t('usageTitle')}</h2>
-            <ol className={`${styles.stepList} list-decimal list-inside space-y-3 text-gray-700`}>
+          <div className={styles.usageSection}>
+            <h2 className={styles.usageTitle}>{t('usageTitle')}</h2>
+            <ol className={styles.usageList}>
               <li>{t('step1')}</li>
               <li>{t('step2')}</li>
               <li>{t('step3')}</li>
