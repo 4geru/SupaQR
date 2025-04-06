@@ -57,6 +57,46 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // public.users テーブルにユーザーが存在するか確認
+      // Note: 'users' is assumed table name, adjust if needed.
+      const { data: existingUser, error: userCheckError } = await supabase
+        .from('users') 
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (userCheckError) {
+        console.error('ユーザー存在確認エラー:', userCheckError);
+        return NextResponse.json({ error: 'ユーザー情報の確認中にエラーが発生しました' }, { status: 500 });
+      }
+
+      // ユーザーが存在しない場合は挿入する
+      if (!existingUser) {
+        const userEmail = authUser.email;
+        if (!userEmail) {
+          console.error('ユーザー登録に必要なメールアドレスが取得できませんでした。Auth User:', authUser);
+          return NextResponse.json({ error: 'ユーザー登録に必要なメールアドレスが取得できませんでした' }, { status: 400 });
+        }
+
+        // Note: Assumes 'users' table has 'id' (uuid) and 'email' columns. Adjust if needed.
+        const { error: userInsertError } = await supabase
+          .from('users') 
+          .insert({ id: userId, email: userEmail }); 
+
+        if (userInsertError) {
+          // Handle potential race condition where user was inserted between check and insert
+          if (userInsertError.code === '23505') { // unique_violation
+             console.warn(`User ${userId} likely already exists despite check (unique violation):`, userInsertError.message);
+             // Proceed as the user exists now
+          } else {
+             console.error('public.users テーブルへのユーザー挿入失敗:', userInsertError);
+             return NextResponse.json({ error: 'ユーザー情報の作成に失敗しました' }, { status: 500 });
+          }
+        } else {
+          console.log(`User ${userId} (${userEmail}) が public.users テーブルに挿入されました。`);
+        }
+      }
+
       let records: Record<string, string>[];
       try {
         records = parse(listData, { columns: true, skip_empty_lines: true });

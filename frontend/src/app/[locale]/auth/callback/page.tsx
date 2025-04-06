@@ -1,65 +1,99 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/utils/supabase/client'
 import { useLocale, useTranslations } from 'next-intl'
 
 export default function AuthCallback() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const locale = useLocale()
   const t = useTranslations('Auth')
+  const supabase = createClient()
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN') {
-          if (session?.user) {
-            try {
-              const { data: user, error: selectError } = await supabase
-                .from('users')
-                .select('id')
-                .eq('id', session.user.id)
-                .single()
+    const handleAuthCallback = async () => {
+      const code = searchParams.get('code')
 
-              if (selectError && selectError.code !== 'PGRST116') {
-                console.error('Error checking user:', selectError)
-                throw selectError
+      if (code) {
+        try {
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.exchangeCodeForSession(code)
+
+          if (sessionError) {
+            console.error('Error exchanging code for session:', sessionError)
+            router.push('/?error=session_exchange_failed')
+            return
+          }
+
+          if (session) {
+            const { data: userData, error: userError } = await supabase.auth.getUser()
+
+            if (userError) {
+              console.error('Error fetching user:', userError)
+              router.push('/?error=user_fetch_failed')
+              return
+            }
+
+            if (userData?.user) {
+              const { id, email } = userData.user
+
+              if (!email) {
+                console.error('User email is missing.')
+                router.push('/?error=missing_email')
+                return
               }
 
-              if (!user) {
-                console.log(`User data not found for id ${session.user.id}. Creating new user entry.`)
-                const { error: insertError } = await supabase
-                  .from('users')
-                  .insert({
-                    id: session.user.id,
-                    email: session.user.email,
-                  })
+              const response = await fetch('/api/upload-list', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ user_id: id, email: email }),
+              })
 
-                if (insertError) {
-                  console.error('Error creating user entry:', insertError)
-                  throw insertError
-                }
-                console.log(`User entry created for id ${session.user.id}.`)
+              if (!response.ok) {
+                const errorData = await response.json()
+                console.error('Error calling user upsert API:', errorData.error)
+                router.push(`/?error=user_upsert_failed&message=${encodeURIComponent(errorData.error)}`)
+                return
+              }
+              const result = await response.json()
+
+              if (result.success) {
+                localStorage.setItem(
+                  'user',
+                  JSON.stringify({ id: id, email: email }),
+                )
+                console.log('User info saved to local storage')
+                router.push('/')
               } else {
-                console.log(`User entry found for id ${session.user.id}.`)
+                console.error('User upsert failed via API:', result.error)
+                router.push(`/?error=user_upsert_api_failed&message=${encodeURIComponent(result.error)}`)
               }
-
-              router.push(`/${locale}/lists`)
-            } catch (error) {
-              console.error('Error ensuring user profile:', error)
+            } else {
+              console.log('No user data found after successful session exchange.')
+              router.push('/?error=no_user_data')
             }
           } else {
-            console.error('No user session found after SIGNED_IN event.')
+            console.log('No session found after exchanging code.')
+            router.push('/?error=no_session')
           }
+        } catch (error) {
+          console.error('Unexpected error during auth callback:', error)
+          router.push('/?error=unexpected_callback_error')
         }
+      } else {
+        console.log('No authorization code found in URL.')
+        router.push('/?error=no_auth_code')
       }
-    )
-
-    return () => {
-      authListener?.subscription?.unsubscribe()
     }
-  }, [router, locale])
+
+    handleAuthCallback()
+  }, [searchParams, router, supabase])
 
   return (
     <div className="flex min-h-screen items-center justify-center">
