@@ -22,7 +22,7 @@ export default function LoginPage() {
     try {
       await signIn(email, password)
       router.push(`/${locale}/lists`)
-    } catch (err) {
+    } catch {
       setError(t('errors.loginFailed'))
     }
   }
@@ -30,7 +30,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle()
-    } catch (err) {
+    } catch {
       setError(t('errors.googleFailed'))
     }
   }

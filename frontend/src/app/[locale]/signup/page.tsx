@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
@@ -42,7 +42,7 @@ export default function SignUpPage() {
       // サインアップ成功時のメッセージを表示
       alert(t('emailSent'))
       router.push(`/${locale}/login`)
-    } catch (err) {
+    } catch {
       setError(t('errors.signUpFailed'))
     } finally {
       setLoading(false)

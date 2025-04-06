@@ -46,7 +46,7 @@ export default async function LocaleLayout(props: Props) {
   let messages
   try {
     messages = (await import(`@/i18n/messages/${currentLocale}.json`)).default
-  } catch (error) {
+  } catch {
     console.error(`Failed to load messages for locale ${currentLocale}, falling back to ${defaultLocale}`)
     messages = (await import(`@/i18n/messages/${defaultLocale}.json`)).default
   }

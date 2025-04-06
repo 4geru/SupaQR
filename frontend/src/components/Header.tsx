@@ -3,13 +3,12 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/lib/auth-context'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useEffect } from 'react'
 
 export default function Header() {
   const { user, signOut } = useAuth()
-  const router = useRouter()
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('Header')

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseKey)
     
     // 接続テスト
-    const { data: testData, error: testError } = await supabase
+    const { error: testError } = await supabase
       .from(tableName)
       .select(columnName)
       .limit(1)

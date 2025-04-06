@@ -11,7 +11,7 @@ export default function AuthCallback() {
   const t = useTranslations('Auth')
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         router.push(`/${locale}/lists`)
       }

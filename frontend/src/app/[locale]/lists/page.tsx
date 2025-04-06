@@ -23,7 +23,6 @@ export default function ListsPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null)
   const router = useRouter()
-  const { user } = useAuth()
   const locale = useLocale()
 
   useEffect(() => {
