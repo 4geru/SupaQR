@@ -1,145 +1,108 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-function parseCSV(csvData: string): Record<string, string>[] {
-  const lines = csvData.split('\n');
-  if (lines.length < 2) return [];
-
-  // ヘッダー行を処理
-  const headers = lines[0].split(',').map(header => header.trim());
-
-  // データ行を処理
-  const records: Record<string, string>[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    const values = line.split(',').map(value => value.trim());
-    const record: Record<string, string> = {};
-    
-    headers.forEach((header, index) => {
-      record[header] = values[index] || '';
-    });
-
-    records.push(record);
-  }
-
-  return records;
-}
+import { parse } from 'csv-parse/sync';
 
 export async function POST(request: Request) {
   try {
     const requestBody = await request.json(); 
     
-    console.log('リクエスト全体:', JSON.stringify(requestBody).substring(0, 200));
-
-    const { csvData, fileName, session } = requestBody;
+    const { listName, listDescription, listData, user } = requestBody;
     
-    // sessionオブジェクトからuserIdを取得
-    const userId = session?.user?.id;
+    const userId = user.id;
     
-    console.log('リクエスト受信:', { 
-      fileNameReceived: !!fileName, 
-      csvDataReceived: !!csvData, 
-      sessionReceived: !!session,
-      sessionUserIdExists: !!userId,
-      userId: userId,
-      requestBodyKeys: Object.keys(requestBody)
-    });
-    
-    // 環境変数からSupabase接続情報を取得
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    console.log('環境変数:', {
-      supabaseUrlExists: !!supabaseUrl,
-      supabaseKeyExists: !!supabaseKey
-    });
-    
-    // パラメータのバリデーション
-    if (!supabaseUrl || !supabaseKey || !csvData || !fileName || !userId) {
-      console.error('不足しているパラメータ:', {
-        supabaseUrl: !!supabaseUrl,
-        supabaseKey: !!supabaseKey,
-        csvData: !!csvData,
-        fileName: !!fileName,
-        sessionExists: !!session,
-        userId: !!userId,
-        userIdValue: userId
-      });
-      return NextResponse.json(
-        { error: '必須パラメータが不足しています' },
-        { status: 400 }
-      );
-    }
-
-    // CSVデータをパース
-    const records = parseCSV(csvData);
-
-    if (records.length === 0) {
-      return NextResponse.json(
-        { error: 'CSVファイルにデータが含まれていません' },
-        { status: 400 }
-      );
-    }
-
-    console.log('CSVパース完了:', { recordsCount: records.length });
-
-    // Supabaseクライアントを作成（認証情報を正しく設定）
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      },
-      auth: {
-        persistSession: false
-      }
-    });
-
     try {
-      // リストを作成する前にユーザーを確認
-      console.log('挿入するユーザーID:', userId);
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       
-      // リストを作成
-      const { data: list, error: listError } = await supabase
+      if (!supabaseUrl || !supabaseKey) {
+        return NextResponse.json(
+          { error: 'Supabase接続情報が不足しています' },
+          { status: 400 }
+        );
+      }
+      
+      if (!listName || !listData) {
+        return NextResponse.json(
+          { error: '必須パラメータが不足しています' },
+          { status: 400 }
+        );
+      }
+      
+      let records: Record<string, string>[];
+      try {
+        records = parse(listData, { columns: true, skip_empty_lines: true });
+      } catch (parseError) {
+        console.error('CSVパースエラー:', parseError);
+        return NextResponse.json(
+          { error: 'CSVデータの解析に失敗しました' },
+          { status: 400 }
+        );
+      }
+      
+      const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+      
+      // Check if user exists in public.users table and create if not
+      const { data: existingUser, error: userCheckError } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (userCheckError) {
+        console.error('ユーザー確認エラー:', userCheckError);
+        throw userCheckError;
+      }
+
+      if (!existingUser) {
+        const { error: userInsertError } = await supabaseAdmin
+          .from('users')
+          .insert({ id: userId, email: user.email });
+
+        if (userInsertError) {
+          console.error('ユーザー作成エラー:', userInsertError);
+          // Handle potential unique constraint violation if user was created concurrently
+          if (userInsertError.code !== '23505') { 
+            throw userInsertError;
+          }
+        }
+      }
+      
+      const { data: newList, error: listInsertError } = await supabaseAdmin
         .from('lists')
         .insert([
           {
-            title: fileName.replace('.csv', ''),
-            description: `${records.length}件のアイテムを含むリスト`,
+            title: listName,
+            description: listDescription,
             user_id: userId,
           },
         ])
         .select()
         .single();
-
-      if (listError) {
-        console.error('リスト作成エラー:', listError);
-        throw listError;
+      
+      if (listInsertError) {
+        console.error('リスト作成エラー:', listInsertError);
+        throw listInsertError;
       }
-
-      // リストアイテムを作成
-      const listItems = records.map((record, index) => ({
-        list_id: list.id,
+      
+      const listItems = records.map((record: Record<string, string>, index: number) => ({
+        list_id: newList.id,
         csv_column: record,
         csv_column_number: index + 1,
       }));
-
-      const { error: itemsError } = await supabase
+      
+      const { error: itemsError } = await supabaseAdmin
         .from('list_items')
         .insert(listItems);
-
+      
       if (itemsError) {
         console.error('リストアイテム作成エラー:', itemsError);
         throw itemsError;
       }
-
-      // 成功レスポンス
+      
       return NextResponse.json({
-        message: `${list.title}リストを作成しました`,
-        title: list.title,
-        id: list.id,
+        message: `${newList.title}リストを作成しました`,
+        title: newList.title,
+        id: newList.id,
         itemCount: records.length,
       });
     } catch (error) {

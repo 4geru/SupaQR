@@ -36,7 +36,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [listState, setListState] = useState<ListState>({
     lists: [],
     loading: true,
@@ -52,7 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       setLoading(true);
-      setError(null);
       
       try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -121,25 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // 言語パスプレフィックスを無視して実際のルートパスを取得
       const pathWithoutLocale = currentPath.replace(/^\/[a-z]{2}\//, '/');
-      console.log('パス解析:', { 
-        currentPath, 
-        pathWithoutLocale,
-        userExists: !!user
-      });
       
       if (!user) {
         // 未認証ユーザーはログインページ以外にアクセスできない
         if (!pathWithoutLocale.startsWith(`/${locale}/login`) && !pathWithoutLocale.startsWith('/signup')) {
-          console.log('未認証ユーザーをログインページにリダイレクト', { currentPath });
           router.push(`/${locale}/login`);
         }
       } else {
         // 認証済みユーザーはログインページにアクセスできない
         if (pathWithoutLocale.startsWith(`/${locale}/login`)) {
-          console.log('認証済みユーザーをホームページにリダイレクト', { currentPath });
           router.push(`/${locale}/lists`);
-        } else {
-          console.log('認証済みユーザー、現在のパス:', { currentPath, userId: user.id });
         }
       }
     }
@@ -210,22 +199,3 @@ export function useAuth() {
   }
   return context
 }
-
-const fetchLists = async (supabase: SupabaseClient, userId: string, retryCount = 0) => {
-  try {
-    const { data, error } = await supabase
-      .from('lists')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    if (retryCount < 3) {
-      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-      return fetchLists(supabase, userId, retryCount + 1);
-    }
-    throw err;
-  }
-};

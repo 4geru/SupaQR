@@ -29,7 +29,7 @@ export const fetchTables = async (supabase: ReturnType<typeof createSupabaseClie
 
     if (error) throw error
 
-    return data?.map((table: any) => ({
+    return data?.map((table: { table_name: string }) => ({
       tablename: table.table_name
     })) || []
   } catch (error) {

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLocale } from 'next-intl'
+import { redirect } from 'next/navigation'
 
 interface List {
   id: number
@@ -23,7 +24,6 @@ export default function ListsPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadResult, setUploadResult] = useState<{message: string, success: boolean} | null>(null)
   const router = useRouter()
-  const { user } = useAuth()
   const locale = useLocale()
 
   useEffect(() => {
@@ -50,18 +50,16 @@ export default function ListsPage() {
         }
 
         if (!session) {
-          console.log('No session found. Redirecting to login page.')
-          router.push(`/${locale}/login`)
-          return
+          return redirect('/${params.locale}/login')
         }
 
-        console.log('Authentication successful:', session.user.id)
+        const userId = session.user.id
         
         // Get lists if authenticated
         const { data, error: fetchError } = await supabase
           .from('lists')
           .select('*')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false })
         
         if (fetchError) {
@@ -70,17 +68,20 @@ export default function ListsPage() {
         }
 
         if (!data || data.length === 0) {
-          console.log('No lists found')
           setLists([])
           return
         }
 
-        console.log('Lists fetched successfully:', data.length, 'items')
         setLists(data)
-      } catch (err) {
-        console.error('Authentication check error:', err)
-        setError(err instanceof Error ? err.message : t('errors.unknown'))
-        setLists([])
+      } catch (e) {
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        let errorMessage = t('errors.unknown');
+        if (e instanceof Error) {
+          errorMessage = e.message;
+        } else if (typeof e === 'string') {
+          errorMessage = e;
+        }
+        setError(errorMessage)
       } finally {
         setLoading(false)
       }
@@ -118,9 +119,10 @@ export default function ListsPage() {
       
       // Send data to API endpoint
       const requestBody = {
-        csvData: fileContent,
-        fileName: file.name,
-        session: session,
+        listData: fileContent,
+        listName: file.name,
+        listDescription: '', // Add empty description for now
+        user: session?.user, // Pass the user object from session
       }
       
       const response = await fetch('/api/upload-list', {
